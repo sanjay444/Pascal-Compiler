@@ -1,0 +1,47 @@
+/************ From my tree.h ***************/
+
+typedef struct id_node {
+    ST_ID           id;
+    struct id_node *next;
+} ID_NODE, *ID_LIST;
+
+typedef struct {
+    ST_ID	id;
+    TYPE	type;
+} PTR_OBJ;
+
+
+/************ From my gram.y **************/
+
+%union {
+    char *      y_string;
+    long        y_int;
+    double      y_real;
+    TYPE        y_type;
+    ID_LIST     y_idlist;
+    ST_ID       y_stid;
+    PTR_OBJ     y_ptrobj;
+    PARAM_LIST  y_params;
+    INDEX_LIST  y_indices;
+}
+
+%token <y_string> LEX_ID
+
+%token <y_int> LEX_INTCONST
+%token <y_string> LEX_STRCONST
+%token <y_real> LEX_REALCONST
+
+%type <y_int> unsigned_number number sign constant
+%type <y_idlist> optional_par_id_list id_list
+%type <y_stid> identifier new_identifier
+%type <y_string> new_identifier_1
+%type <y_type> typename type_denoter type_denoter_1 new_ordinal_type 
+%type <y_type> new_pointer_type new_procedural_type new_structured_type
+%type <y_type> unpacked_structured_type enumerated_type array_type
+%type <y_type> subrange_type ordinal_index_type functiontype
+%type <y_indices> array_index_list
+%type <y_ptrobj> pointer_domain_type
+%type <y_params> optional_procedural_type_formal_parameter_list
+%type <y_params> procedural_type_formal_parameter_list
+%type <y_params> procedural_type_formal_parameter
+
