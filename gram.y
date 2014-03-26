@@ -61,12 +61,34 @@ void yyerror(const char *);
 
 /* The union representing a semantic stack entry */
 %union {
-    char  *y_string;
-    long   y_int;
-    double y_real;
+    char      *y_string;
+    long       y_int;
+    double     y_real;
+    
+    ST_ID      y_stid;
+    TYPE       y_type;
+    PARAM_LIST y_paramlist;
+    INDEX_LIST y_indexlist;
+    PARAM      y_param;
+    ID_LIST    y_idlist; /* need an ID_LIST structure */
 }
 
-%token LEX_ID
+/* updated token types and non-terminal types */
+%token <y_string> LEX_ID
+
+%type <y_string>  new_identifier_1
+%type <y_int> sign unsigned_number number constant
+%type <y_type> typename type_denoter type_denoter_1 new_ordinal_type
+%type <y_type> subrange_type new_procedural_type ordinal_index_type
+%type <y_type> array_type unpacked_structured_type new_structured_type
+%type <y_type> functiontype new_pointer_type
+%type <y_paramlist> optional_procedural_type_formal_parameter_list
+%type <y_paramlist> procedural_type_formal_parameter_list
+%type <y_paramlist> procedural_type_formal_parameter
+%type <y_indexlist> array_index_list
+%type <y_stid> identifier new_identifier
+%type <y_param> pointer_domain_type
+%type <y_idlist> id_list optional_par_id_list
 
 /* Reserved words. */
 
@@ -107,7 +129,9 @@ void yyerror(const char *);
 %token LEX_LABEL_ADDR
 
 /* GPC internal tokens */
-%token LEX_INTCONST LEX_STRCONST LEX_REALCONST
+%token <y_int> LEX_INTCONST
+%token <y_string> LEX_STRCONST
+%token <y_real> LEX_REALCONST
 %token LEX_RANGE LEX_ELLIPSIS
 
 /* We don't declare precedences for operators etc. We don't need
@@ -166,78 +190,86 @@ program_heading:
 
 optional_par_id_list:
     /* empty */  {}
-  | '(' id_list ')'  {}
+  | '(' id_list ')'  { $$ = $2; }
   ;
-
+  
+/****************
+ * line 201 : inserts new_identifier(ST_ID) onto an empty list and returns ID_LIST
+ * line 202 : inserts new_identifier(ST_ID) onto current ID_LIST and returns ID_LIST
+ ****************/
 id_list:
-    new_identifier  {}
-  | id_list ',' new_identifier  {}
+    new_identifier  { /* $$ = some_function(NULL, $1); */}
+  | id_list ',' new_identifier  {/* $$ = some_function($1, $3); */} 
   ;
 
+/***************
+ * line 209 : takes in the ST_ID and returns the TYPE
+ *            also checks that it is installed in the symtab as TYPENAME
+ ***************/
 typename:
-    LEX_ID  {}
+    LEX_ID  { /* $$ = some_function(st_enter_id($1)); */} 
   ;
 
 identifier:
-    LEX_ID  {}
+    LEX_ID  { $$ = st_enter_id($1); }
   ;
 
 new_identifier:
-    new_identifier_1  {}
+    new_identifier_1  { $$ = st_enter_id($1); }
   ;
 
-new_identifier_1:
-LEX_ID  {}
+new_identifier_1: /* default actions for all */
+LEX_ID  { $$ = $1; }
 /* Standard Pascal constants */
-  | p_MAXINT  {}
-  | p_FALSE  {}
-| p_TRUE  {}
+  | p_MAXINT  
+  | p_FALSE  
+| p_TRUE  
 /* Standard Pascal I/O */
-  | p_INPUT  {}
-  | p_OUTPUT  {}
-  | p_REWRITE  {}
-  | p_RESET  {}
-  | p_PUT  {}
-  | p_GET  {}
-  | p_WRITE  {}
-  | p_READ  {}
-  | p_WRITELN  {}
-  | p_READLN  {}
-  | p_PAGE  {}
-  | p_EOF  {}
-  | p_EOLN  {}
+  | p_INPUT  
+  | p_OUTPUT  
+  | p_REWRITE  
+  | p_RESET 
+  | p_PUT 
+  | p_GET  
+  | p_WRITE  
+  | p_READ
+  | p_WRITELN 
+  | p_READLN
+  | p_PAGE
+  | p_EOF 
+  | p_EOLN
 /* Standard Pascal heap handling */
-  | p_NEW  {}
-  | p_DISPOSE  {}
+  | p_NEW 
+  | p_DISPOSE 
 /* Standard Pascal arithmetic */
-  | p_ABS  {}
-  | p_SQR  {}
-  | p_SIN  {}
-  | p_COS  {}
-  | p_EXP  {}
-  | p_LN  {}
-  | p_SQRT  {}
-  | p_ARCTAN  {}
-  | p_TRUNC  {}
-  | p_ROUND  {}
+  | p_ABS  
+  | p_SQR  
+  | p_SIN  
+  | p_COS  
+  | p_EXP 
+  | p_LN
+  | p_SQRT
+  | p_ARCTAN
+  | p_TRUNC  
+  | p_ROUND  
 /* Standard Pascal transfer functions */
-  | p_PACK  {}
-  | p_UNPACK  {}
+  | p_PACK
+  | p_UNPACK
 /* Standard Pascal ordinal functions */
-  | p_ORD  {}
-  | p_CHR  {}
-  | p_SUCC  {}
-  | p_PRED  {}
-  | p_ODD  {}
+  | p_ORD  
+  | p_CHR  
+  | p_SUCC
+  | p_PRED  
+  | p_ODD  
 /* Other extensions */
-  | BREAK  {}
-  | CONTINUE  {}
-  | RETURN_  {}
-  | RESULT  {}
-  | EXIT  {}
-  | FAIL  {}
-  | SIZEOF  {}
-  | BITSIZEOF  {}
+  | BREAK  
+  | CONTINUE  
+  | RETURN_  
+  | RESULT  
+  | EXIT  
+  | FAIL  
+  | SIZEOF  
+  | BITSIZEOF 
   ;
 
 import_or_any_declaration_part:
@@ -265,8 +297,8 @@ any_decl:
   ;
 
 simple_decl:
-    label_declaration_part  {}
-  | constant_definition_part  {}
+    label_declaration_part  {/*ignore*/}
+  | constant_definition_part  {/*ignore*/}
   | type_definition_part  {}
   | variable_declaration_part  {}
   ;
@@ -303,26 +335,26 @@ constant_definition:
     new_identifier '=' static_expression semi  {}
   ;
 
-constant:
+constant: /* number only now */
     identifier  {}
   | sign identifier  {}
-  | number  {}
+  | number  { $$ = $1; }
   | constant_literal  {}
   ;
 
 number:
-    sign unsigned_number  {}
-  | unsigned_number  {}
+    sign unsigned_number  { $$ = $1 * $2; }
+  | unsigned_number  { $$ = $1; }
   ;
 
 unsigned_number:
-    LEX_INTCONST  {}
-  | LEX_REALCONST  {}
+    LEX_INTCONST  { $$ = $1; }
+  | LEX_REALCONST  { $$ = (long) $1; /* cast as long */}
   ;
 
 sign:
-    '+'  {}
-  | '-'  {}
+    '+'  { $$ = 1; }
+  | '-'  { $$ = -1; }
   ;
 
 constant_literal:
@@ -346,7 +378,7 @@ string:
   ;
 
 type_definition_part:
-    LEX_TYPE type_definition_list semi  {}
+    LEX_TYPE type_definition_list semi  { /* resolve pointer types here */}
   ;
 
 type_definition_list:
@@ -355,24 +387,24 @@ type_definition_list:
   ;
 
 type_definition:
-    new_identifier '=' type_denoter  {}
+    new_identifier '=' type_denoter  { /* some_function($1, $3); */ } /* make type and insert into symbol table */
   ;
 
-type_denoter:
-    typename  {}
-  | type_denoter_1  {}
+type_denoter: /* default actions to pass TYPE through */
+    typename  { $$ = $1; }
+  | type_denoter_1  { $$ = $1; }
   ;
 
-type_denoter_1:
-    new_ordinal_type  {}
-  | new_pointer_type  {}
-  | new_procedural_type  {}
-  | new_structured_type  {}
+type_denoter_1: /* default actions to pass TYPE through */
+    new_ordinal_type  { $$ = $1;}
+  | new_pointer_type  { $$ = $1; }
+  | new_procedural_type  { $$ = $1; }
+  | new_structured_type  { $$ = $1; }
   ;
 
-new_ordinal_type:
+new_ordinal_type: /* default actions to pass TYPE through */
     enumerated_type  {}
-  | subrange_type  {}
+  | subrange_type  { $$ = $1; }
   ;
 
 enumerated_type:
@@ -388,12 +420,12 @@ enumerator:
     new_identifier  {}
   ;
 
-subrange_type:
-    constant LEX_RANGE constant  {}
+subrange_type: /* builds subrange TYPE */
+    constant LEX_RANGE constant  { $$ = ty_build_subrange(ty_build_basic(TYSIGNEDLONGINT), $1, $3); }
   ;
 
-new_pointer_type:
-    pointer_char pointer_domain_type  {}
+new_pointer_type: /* builds pointer TYPE */
+    pointer_char pointer_domain_type  { $$ = ty_build_ptr($2.id, $2.type); }
   ;
 
 pointer_char:
@@ -402,22 +434,24 @@ pointer_char:
   ;
 
 pointer_domain_type:
-    new_identifier  {}
-  | new_procedural_type  {}
+    new_identifier  { $$.id = $1;
+                      $$.type = NULL; }
+  | new_procedural_type  { $$.id = NULL;
+                           $$.type = $1; }
   ;
 
-new_procedural_type:
-    LEX_PROCEDURE optional_procedural_type_formal_parameter_list  {}
-  | LEX_FUNCTION optional_procedural_type_formal_parameter_list functiontype  {}
+new_procedural_type: /* builds FUNC TYPE */
+    LEX_PROCEDURE optional_procedural_type_formal_parameter_list  { $$ = ty_build_func(ty_build_basic(TYVOID, $2, TRUE); }
+  | LEX_FUNCTION optional_procedural_type_formal_parameter_list functiontype  { $$ = ty_build_func($3, $2, TRUE); }
   ;
 
 optional_procedural_type_formal_parameter_list:
     /* empty */  {}
-  | '(' procedural_type_formal_parameter_list ')'  {}
+  | '(' procedural_type_formal_parameter_list ')'  { $$ = $2; }
   ;
 
 procedural_type_formal_parameter_list:
-    procedural_type_formal_parameter  {}
+    procedural_type_formal_parameter  { $$ = $1; }
   | procedural_type_formal_parameter_list semi procedural_type_formal_parameter  {}
   ;
 
@@ -428,13 +462,13 @@ procedural_type_formal_parameter:
   | LEX_VAR id_list  {}
   ;
 
-new_structured_type:
-    LEX_PACKED unpacked_structured_type  {}
-  | unpacked_structured_type  {}
+new_structured_type: /* pass TYPE through */
+    LEX_PACKED unpacked_structured_type  { $$ = $2; }
+  | unpacked_structured_type  { $$ = $1; }
   ;
 
-unpacked_structured_type:
-    array_type  {}
+unpacked_structured_type: /* pass TYPE through */ 
+    array_type  { $$ = $1; }
   | file_type  {}
   | set_type  {}
   | record_type  {}
@@ -442,19 +476,19 @@ unpacked_structured_type:
 
 /* Array */
 
-array_type:
-    LEX_ARRAY '[' array_index_list ']' LEX_OF type_denoter  {}
+array_type: /* builds array TYPE */
+    LEX_ARRAY '[' array_index_list ']' LEX_OF type_denoter  { $$ = ty_build_array($6, $3); }
   ;
 
-array_index_list:
-    ordinal_index_type  {}
-  | array_index_list ',' ordinal_index_type  {}
+array_index_list: 
+    ordinal_index_type  { $$ = some_function(NULL, $1); /* create index_list structure and return index_list */ }
+  | array_index_list ',' ordinal_index_type  { $$ = some_function($3, $1); /* assign INDEX strcture in INDEX_LIST to have TYPE value in ordinal_index_type and return INDEX_LIST */}
   ;
 
 
-ordinal_index_type:
-    new_ordinal_type  {}
-  | typename  {}
+ordinal_index_type: /* default actions to pass TYPE through */
+    new_ordinal_type  { $$ = $1; }
+  | typename  { $$ = $1; }
   ;
 
 /* FILE */
@@ -543,7 +577,7 @@ variable_declaration_list:
   ;
 
 variable_declaration:
-    id_list ':' type_denoter semi  {}
+    id_list ':' type_denoter semi  { /* some_function($1, $3); */} /* make variable and insert into symbol table */
   ;
 
 function_declaration:
@@ -566,9 +600,16 @@ directive:
   | LEX_EXTERNAL  {}
   ;
 
+/******************
+ * line 603: needs error message if empty
+ * line 604: function to check that type is a simple type 
+ *           (not procedure, function, array, or record) pointers ok
+ *           if simple type return TYPE
+ *****************/
+
 functiontype:
-    /* empty */  {}
-  | ':' typename  {}
+    /* empty */  { $$ = ty_build_basic(TYERROR); }
+  | ':' typename  { $$ = some_function($2); }
   ;
 
 /* parameter specification section */
