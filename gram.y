@@ -46,6 +46,8 @@
 %{
 
 /* Cause the `yydebug' variable to be defined.  */
+#include "tree.h"
+#include "encode.h"
 #define YYDEBUG 1
 
 void set_yydebug(int);
@@ -61,16 +63,15 @@ void yyerror(const char *);
 
 /* The union representing a semantic stack entry */
 %union {
-    char      *y_string;
-    long       y_int;
-    double     y_real;
-    
-    ST_ID      y_stid;
-    TYPE       y_type;
-    PARAM_LIST y_paramlist;
-    INDEX_LIST y_indexlist;
-    PARAM      y_param;
-    ID_LIST    y_idlist; /* need an ID_LIST structure */
+    char        *y_string;
+    long         y_int;
+    double       y_real;
+    ST_ID        y_stid;
+    TYPE         y_type;
+    PARAM_LIST   y_paramlist;
+    INDEX_LIST   y_indexlist;
+    PARAM        y_param;
+    VAR_ID_LIST  y_varidlist;
 }
 
 /* updated token types and non-terminal types */
@@ -88,7 +89,7 @@ void yyerror(const char *);
 %type <y_indexlist> array_index_list
 %type <y_stid> identifier new_identifier
 %type <y_param> pointer_domain_type
-%type <y_idlist> id_list optional_par_id_list
+%type <y_varidlist> id_list optional_par_id_list
 
 /* Reserved words. */
 
@@ -193,13 +194,9 @@ optional_par_id_list:
   | '(' id_list ')'  { $$ = $2; }
   ;
   
-/****************
- * line 201 : inserts new_identifier(ST_ID) onto an empty list and returns ID_LIST
- * line 202 : inserts new_identifier(ST_ID) onto current ID_LIST and returns ID_LIST
- ****************/
 id_list:
-    new_identifier  { /* $$ = some_function(NULL, $1); */}
-  | id_list ',' new_identifier  {/* $$ = some_function($1, $3); */} 
+    new_identifier  { $$ = build_var_id_list(NULL, $1); }
+  | id_list ',' new_identifier  { $$ = build_var_id_list($1, $3); */} 
   ;
 
 /***************
@@ -378,7 +375,7 @@ string:
   ;
 
 type_definition_part:
-    LEX_TYPE type_definition_list semi  { /* resolve pointer types here */}
+    LEX_TYPE type_definition_list semi  { $$ = resolve_all_ptr(); }
   ;
 
 type_definition_list:
@@ -387,8 +384,7 @@ type_definition_list:
   ;
 
 type_definition:
-    new_identifier '=' type_denoter  { /* some_function($1, $3); */ } /* make type and insert into symbol table */
-  ;
+    new_identifier '=' type_denoter  { $$ = create_typename( $1, $3 ); }
 
 type_denoter: /* default actions to pass TYPE through */
     typename  { $$ = $1; }
@@ -481,8 +477,8 @@ array_type: /* builds array TYPE */
   ;
 
 array_index_list: 
-    ordinal_index_type  { $$ = some_function(NULL, $1); /* create index_list structure and return index_list */ }
-  | array_index_list ',' ordinal_index_type  { $$ = some_function($3, $1); /* assign INDEX strcture in INDEX_LIST to have TYPE value in ordinal_index_type and return INDEX_LIST */}
+    ordinal_index_type  { $$ = create_list_from_type( $1 ); }
+  | array_index_list ',' ordinal_index_type  { $$ = concatenate_index_lists($3, $1); }
   ;
 
 
