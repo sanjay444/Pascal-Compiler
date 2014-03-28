@@ -118,7 +118,26 @@ TYPE check_function_type(TYPE type) {
 	return type;
 }
 
+/* This function checks an array to see if it's element type is valid.
+ * It takes two parameters; a type object,and an INDEX_LIST index_list.If the type was not in the symbol table then an
+ error is issued .
+ * As an output it returns a type object; if the error is issued then an error type is returned else an array type is returned.
+ */
 
+TYPE check_array(TYPE type, INDEX_LIST i) {
+	if (ty_query(type) == TYERROR) {
+		error("Data type expected for array elements");
+		return ty_build_basic(TYERROR);
+	}
+	if (ty_query(type) == TYFUNC) {
+		error("Data type expected for array elements");
+		error("Variable(s) must be of data type");
+		return ty_build_basic(TYERROR);
+	}
+
+
+	return ty_build_array(type, i);
+}
 
 
 

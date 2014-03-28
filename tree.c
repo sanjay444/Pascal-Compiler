@@ -139,7 +139,26 @@ TYPE check_array(TYPE type, INDEX_LIST i) {
 	return ty_build_array(type, i);
 }
 
+/* build a variable id list by pushing new id to the front */
 
+VAR_ID_LIST build_var_id_list (VAR_ID_LIST list,ST_ID id)
+{
+  VAR_ID_LIST id_list, temp_list;
+
+  id_list = (VAR_ID_LIST) malloc(sizeof(VAR_ID));
+
+  id_list->id = id;
+  id_list->next = NULL;
+
+  if (list!=NULL)
+  {
+        id_list->next=list;
+
+  }
+ 
+  return id_list;
+  
+}
 
 
 
