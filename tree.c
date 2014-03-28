@@ -28,7 +28,7 @@ void create_gdecl(VAR_ID_LIST list,TYPE type)
 {
        //checking if the variable has a type 
 	if (ty_query(type) == TYFUNC) {
-		error("variable should have a datatype");
+		error("Variable(s) must be of data type");
 		
 	}
 
