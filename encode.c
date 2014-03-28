@@ -9,6 +9,7 @@ void simple_allocate_space (char *id, TYPE type)
 	int alignment = size;
 	if (size != 0){
 		b_global_decl (id, alignment, size);
+		b_skip(size);
 	}
 	else
 	{
@@ -24,6 +25,7 @@ void array_allocate_space (char *id, TYPE array, INDEX_LIST *i)
 	int asize = size * sizeof(i);
 
 	b_global_decl (id, size, asize);
+	b_skip(size);
 
 }
 
@@ -34,6 +36,7 @@ void subrange_allocate_space (char *id, TYPE type, long *low, long *high)
 	int size = simple_size (sub_type);
 
 	b_global_decl (id, size, size);
+	b_skip(size);
 }
 
 
