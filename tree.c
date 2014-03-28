@@ -56,7 +56,7 @@ void create_gdecl(VAR_ID_LIST list,TYPE type)
 			free(new_data_rec);
 		}
 
-                simple_allocate_space(st_get_id_str(list->id), type);
+               // simple_allocate_space(st_get_id_str(list->id), type);
 
 		list=list->next;
 	}
