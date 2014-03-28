@@ -149,9 +149,10 @@ VAR_ID_LIST build_var_id_list (VAR_ID_LIST list,ST_ID id)
 
   id_list->id = id;
   id_list->next = NULL;
-
+ //checking if the list is empty 
   if (list!=NULL)
   {
+       // pushing the list to the back of new id 
         id_list->next=list;
 
   }
@@ -159,6 +160,36 @@ VAR_ID_LIST build_var_id_list (VAR_ID_LIST list,ST_ID id)
   return id_list;
   
 }
+
+PARAM_LIST build_param_list(VAR_ID_LIST id_list,TYPE type,BOOLEAN value)
+{
+	//creates a parameter list from single type list of ids: a,b,c : Real
+	VAR_ID_LIST id_ptr = id_list;
+	PARAM_LIST head = NULL;
+        PARAM_LIST new;
+
+	while(id_ptr != NULL)
+	{
+          //adding values to the new id
+	   new = (PARAM_LIST) malloc(sizeof(PARAM));
+           new->id = id_ptr->id;
+           new->type = type;
+	   new->sc = NO_SC;
+	   new->err = FALSE;
+           new->is_ref = value;
+	   new->prev = NULL;
+	   new->next = NULL;
+       
+           new->next=head;
+           head=new;
+            //moving id_ptr to the next node 
+            id_ptr = id_ptr->next;
+	}
+
+	return new;
+
+}
+
 
 
 
