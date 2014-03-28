@@ -11,6 +11,7 @@
 #include "types.h"
 #include "symtab.h"
 #include "message.h"
+#include "tree.h"
 /* defined in defs.h */
 #include BACKEND_HEADER_FILE
 #include "y.tab.h"
