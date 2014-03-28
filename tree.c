@@ -2,7 +2,10 @@
 #include "tree.h"
 #include <stdio.h>
 
-// This function builds a new Typename 
+/* This function creates a new type name data record and install it in the symbol table.
+ * It take two parameters; the name of the type name as a char array, and a type object.
+ * If the type name is already installed in the symbol table a warning message is issued.
+ */
 
 void create_typename(ST_ID id,TYPE new_type)
 {
@@ -216,6 +219,11 @@ PARAM_LIST check_param(PARAM_LIST p)
 	return p;
 }
 
+/* This function concatenates two parameter lists togather as one.
+ * It takes two parameters,both are parameter lists.
+ * As an output, it returns a parameter list that includes both of the input parameter lists.
+ */
+
 PARAM_LIST concatenate_param_list (PARAM_LIST list1,PARAM_LIST list2)
 {
 	if (!list1 && !list2) return NULL;	
@@ -233,5 +241,78 @@ PARAM_LIST concatenate_param_list (PARAM_LIST list1,PARAM_LIST list2)
 	return list1;
 }
 
+/* This function adds a new node at the end of an index list.
+ * It takes two parameters,one is an index list, and the other is atype object.
+ * As an output, it returns an index_list with the new node included.
+ */
 
+INDEX_LIST concatenate_index_lists (INDEX_LIST list1,TYPE type)
+{
+	INDEX_LIST ptr, list2;
+	
+	list2 = (INDEX_LIST) malloc(sizeof(INDEX));
+	list2 = create_list_from_type(type);
+	
+	ptr=list1;
+	while (ptr->next)
+	{
+		ptr = ptr->next;
+	}
+	ptr->next = list2;
+	return list1;
+
+}
+
+/* This function creates the index list for the arrays.
+ * It takes one parameter,a type object; which should be a subrange.
+ * As an output, it returns an index_list.
+ */
+INDEX_LIST create_list_from_type(TYPE type)
+{
+	if (ty_query(type) == TYERROR) return NULL;
+	INDEX_LIST index;
+	index=(INDEX_LIST) malloc(sizeof(INDEX));
+	index->type=type;
+	index->next=NULL;
+	index->prev=NULL;
+	return index;
+}
+
+
+/* This function traverse the linked list of unresolved pointers and resolves them..
+ * It takes no parameter and returns nothing.
+ * An error message is issued for every unresolved pointer.
+ */
+
+void resolve_all_ptr()
+{
+	int junk;
+	ST_ID id;
+	ST_DR data_rec;
+	TYPE unresolved,temp,temp_ptr;
+
+	unresolved=ty_get_unresolved();
+
+	while(unresolved!=NULL)
+	{
+		temp_ptr = ty_query_ptr(unresolved, &id, &temp);
+		data_rec = st_lookup(id,&junk);
+		if (data_rec == NULL) {
+			error("Unresolved type name: \"%s\"", st_get_id_str(id));
+			unresolved = temp;
+			continue;
+		}
+		if (data_rec->tag == TYPENAME)
+		{
+			if(!ty_resolve_ptr(unresolved, data_rec->u.typename.type))
+				error("Unresolved type name: \"%s\"", st_get_id_str(id));
+		}	
+		else
+		{
+			error("Unidentified type tag\n");
+		}
+		unresolved=temp;
+	}
+
+}
 
