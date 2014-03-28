@@ -5,23 +5,20 @@
 
 void simple_allocate_space (char *id, TYPE type)
 {
-	int size;
-
-	if (type == TYSUBRANGE)
-	{
-
-	simple_size (type);
+	int size = simple_size (type);
 	int alignment = size;
 	if (size != 0){
 		b_global_decl (*id, alignment, size);
+	}
 	else
+	{
 		error("This is an invalid type name");
 	}
 }
 
 void array_allocate_space (char *id, TYPE array, INDEX_LIST *i)
 {
-	TYPE simple_type = ty_query_array (array, *i)
+	TYPE simple_type = ty_query_array (array, *i);
 
 	int size = simple_size (simple_type);
 	int asize = size * sizeof(*i);
@@ -42,7 +39,8 @@ void subrange_allocate_space (char *id, TYPE type, long *low, long *high)
 
 int simple_size (TYPE type)
 {
-	switch (type)
+	int inttype = ty_query_enum(type);
+	switch (inttype)
 	{
 	case TYUNSIGNEDCHAR:
 	case TYSIGNEDCHAR:
@@ -66,4 +64,3 @@ int simple_size (TYPE type)
 		return 0;
 	}
 }
-
