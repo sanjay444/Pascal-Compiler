@@ -56,9 +56,7 @@ void create_gdecl(VAR_ID_LIST list,TYPE type)
 		list=list->next;
 	}
 }
-
 // This function checks a typename ,if an ST_ID is already installed in the symbol table ,and if the id was not installed an error type is returned
-
 TYPE check_typename(ST_ID id) {
 	
 	ST_DR chcktype;
@@ -76,6 +74,21 @@ TYPE check_typename(ST_ID id) {
 	return chcktype->u.typename.type;
 	
 }
+
+// This function checks if the second index of the subrange is larger than the first, then it builds the subrange type
+TYPE check_subrange(long a, long b) {
+	if (a < b) {
+		return ty_build_subrange(ty_build_basic(TYSIGNEDLONGINT), a, b);
+	}
+	//error("Invalid subrange %i .. %i", a, b);
+	error("Empty subrange in array index");
+	error("Illegal index type (ignored)");
+	//return NULL;
+	return ty_build_basic(TYERROR);
+}
+
+
+
 
 
 
