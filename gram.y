@@ -115,18 +115,22 @@ void yyerror(const char *);
 /* Redefinable identifiers. */
 
 /* Redefinable identifiers in Standard Pascal */
-%token p_INPUT p_OUTPUT p_REWRITE p_RESET p_PUT p_GET p_WRITE p_READ
-%token p_WRITELN p_READLN p_PAGE p_NEW p_DISPOSE
-%token p_ABS p_SQR p_SIN p_COS p_EXP p_LN p_SQRT p_ARCTAN
-%token p_TRUNC p_ROUND p_PACK p_UNPACK p_ORD p_CHR p_SUCC p_PRED
-%token p_ODD p_EOF p_EOLN p_MAXINT p_TRUE p_FALSE
+%token <y_string> p_INPUT p_OUTPUT p_REWRITE p_RESET p_PUT p_GET p_WRITE p_READ
+%token <y_string> p_WRITELN p_READLN p_PAGE p_NEW p_DISPOSE
+%token <y_string> p_ABS p_SQR p_SIN p_COS p_EXP p_LN p_SQRT p_ARCTAN
+%token <y_string> p_TRUNC p_ROUND p_PACK p_UNPACK p_ORD p_CHR p_SUCC p_PRED
+%token <y_string> p_ODD p_EOF p_EOLN p_MAXINT p_TRUE p_FALSE
 
 /* Additional redefinable identifiers for Borland Pascal */
-%token bp_RANDOM bp_RANDOMIZE BREAK CONTINUE
+%token bp_RANDOM bp_RANDOMIZE 
+%token <y_string> BREAK CONTINUE
 
 /* redefinable keyword extensions */
-%token RETURN_ RESULT EXIT FAIL p_CLOSE CONJUGATE p_DEFINESIZE SIZEOF
-%token BITSIZEOF ALIGNOF TYPEOF gpc_RETURNADDRESS gpc_FRAMEADDRESS
+%token <y_string> RETURN_ RESULT EXIT FAIL 
+%token p_CLOSE CONJUGATE p_DEFINESIZE 
+%token <y_string> SIZEOF
+%token <y_string> BITSIZEOF 
+%token ALIGNOF TYPEOF gpc_RETURNADDRESS gpc_FRAMEADDRESS
 %token LEX_LABEL_ADDR
 
 /* GPC internal tokens */
@@ -196,15 +200,11 @@ optional_par_id_list:
   
 id_list:
     new_identifier  { $$ = build_var_id_list(NULL, $1); }
-  | id_list ',' new_identifier  { $$ = build_var_id_list($1, $3); */} 
+  | id_list ',' new_identifier  { $$ = build_var_id_list($1, $3); } 
   ;
 
-/***************
- * line 209 : takes in the ST_ID and returns the TYPE
- *            also checks that it is installed in the symtab as TYPENAME
- ***************/
 typename:
-    LEX_ID  { /* $$ = some_function(st_enter_id($1)); */} 
+    LEX_ID  { $$ = check_typename(st_enter_id($1)); } 
   ;
 
 identifier:
@@ -375,7 +375,7 @@ string:
   ;
 
 type_definition_part:
-    LEX_TYPE type_definition_list semi  { $$ = resolve_all_ptr(); }
+    LEX_TYPE type_definition_list semi  { resolve_all_ptr(); }
   ;
 
 type_definition_list:
@@ -384,7 +384,7 @@ type_definition_list:
   ;
 
 type_definition:
-    new_identifier '=' type_denoter  { $$ = create_typename( $1, $3 ); }
+    new_identifier '=' type_denoter  { create_typename( $1, $3 ); }
 
 type_denoter: /* default actions to pass TYPE through */
     typename  { $$ = $1; }
@@ -417,7 +417,8 @@ enumerator:
   ;
 
 subrange_type: /* builds subrange TYPE */
-    constant LEX_RANGE constant  { $$ = ty_build_subrange(ty_build_basic(TYSIGNEDLONGINT), $1, $3); }
+    constant LEX_RANGE constant  { $$ = check_subrange($1,$3); }
+
   ;
 
 new_pointer_type: /* builds pointer TYPE */
@@ -437,7 +438,7 @@ pointer_domain_type:
   ;
 
 new_procedural_type: /* builds FUNC TYPE */
-    LEX_PROCEDURE optional_procedural_type_formal_parameter_list  { $$ = ty_build_func(ty_build_basic(TYVOID, $2, TRUE); }
+    LEX_PROCEDURE optional_procedural_type_formal_parameter_list  { $$ = ty_build_func(ty_build_basic(TYVOID), $2, TRUE); }
   | LEX_FUNCTION optional_procedural_type_formal_parameter_list functiontype  { $$ = ty_build_func($3, $2, TRUE); }
   ;
 
@@ -448,14 +449,14 @@ optional_procedural_type_formal_parameter_list:
 
 procedural_type_formal_parameter_list:
     procedural_type_formal_parameter  { $$ = $1; }
-  | procedural_type_formal_parameter_list semi procedural_type_formal_parameter  {}
+  | procedural_type_formal_parameter_list semi procedural_type_formal_parameter  { $$ = concatenate_param_list ($1, $3); }
   ;
 
 procedural_type_formal_parameter:
-    id_list  {}
-  | id_list ':' typename  {}
-  | LEX_VAR id_list ':' typename  {}
-  | LEX_VAR id_list  {}
+    id_list  {$$ = NULL;}
+  | id_list ':' typename  { $$ = build_param_list($1, $3, TRUE); }
+  | LEX_VAR id_list ':' typename  { $$ = build_param_list($2, $4, TRUE); }
+  | LEX_VAR id_list  { $$ = NULL; }
   ;
 
 new_structured_type: /* pass TYPE through */
@@ -473,12 +474,12 @@ unpacked_structured_type: /* pass TYPE through */
 /* Array */
 
 array_type: /* builds array TYPE */
-    LEX_ARRAY '[' array_index_list ']' LEX_OF type_denoter  { $$ = ty_build_array($6, $3); }
+    LEX_ARRAY '[' array_index_list ']' LEX_OF type_denoter  { $$ = check_array($6, $3); }
   ;
 
 array_index_list: 
     ordinal_index_type  { $$ = create_list_from_type( $1 ); }
-  | array_index_list ',' ordinal_index_type  { $$ = concatenate_index_lists($3, $1); }
+  | array_index_list ',' ordinal_index_type  { $$ = concatenate_index_lists($1, $3); }
   ;
 
 
@@ -573,7 +574,7 @@ variable_declaration_list:
   ;
 
 variable_declaration:
-    id_list ':' type_denoter semi  { /* some_function($1, $3); */} /* make variable and insert into symbol table */
+    id_list ':' type_denoter semi  { create_gdecl($1, $3); }
   ;
 
 function_declaration:
@@ -596,16 +597,9 @@ directive:
   | LEX_EXTERNAL  {}
   ;
 
-/******************
- * line 603: needs error message if empty
- * line 604: function to check that type is a simple type 
- *           (not procedure, function, array, or record) pointers ok
- *           if simple type return TYPE
- *****************/
-
 functiontype:
     /* empty */  { $$ = ty_build_basic(TYERROR); }
-  | ':' typename  { $$ = some_function($2); }
+  | ':' typename  { $$ = check_function_type($2); }
   ;
 
 /* parameter specification section */
