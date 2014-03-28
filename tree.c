@@ -2,7 +2,7 @@
 #include "tree.h"
 #include <stdio.h>
 
-/* This function builds a new Typename */
+// This function builds a new Typename 
 
 void create_typename(ST_ID id,TYPE new_type)
 {
@@ -56,4 +56,29 @@ void create_gdecl(VAR_ID_LIST list,TYPE type)
 		list=list->next;
 	}
 }
+
+// This function checks a typename ,if an ST_ID is already installed in the symbol table ,and if the id was not installed an error type is returned
+
+TYPE check_typename(ST_ID id) {
+	
+	ST_DR chcktype;
+	int chck;
+
+     //if the id is null then bug is found 
+	if (id == NULL)
+		bug("null id passed to \"st_install\"");
+
+	if ((chcktype = st_lookup(id,&chck)) == NULL) {
+		error("Undeclared type name: \"%s\"", st_get_id_str(id));
+		return ty_build_basic(TYERROR);
+	}
+
+	return chcktype->u.typename.type;
+	
+}
+
+
+
+
+
 
