@@ -161,6 +161,61 @@ VAR_ID_LIST build_var_id_list (VAR_ID_LIST list,ST_ID id)
   
 }
 
+PARAM_LIST build_param_list(VAR_ID_LIST id_list,TYPE type,BOOLEAN value)
+{
+	//creates a parameter list from single type list of ids: a,b,c : Real
+	VAR_ID_LIST id_ptr = id_list;
+	PARAM_LIST head = NULL;
+        PARAM_LIST new;
+
+	while(id_ptr != NULL)
+	{
+          //adding values to the new id
+	   new = (PARAM_LIST) malloc(sizeof(PARAM));
+           new->id = id_ptr->id;
+           new->type = type;
+	   new->sc = NO_SC;
+	   new->err = FALSE;
+           new->is_ref = value;
+	   new->prev = NULL;
+	   new->next = NULL;
+       
+           new->next=head;
+           head=new;
+            //moving id_ptr to the next node 
+            id_ptr = id_ptr->next;
+	}
+
+	return new;
+
+}
+
+PARAM_LIST check_param(PARAM_LIST p) 
+{
+	
+	if (!p) bug("%s:%d check_params received a NULL pointer\n", __FILE__, __LINE__);
+	if (!p->id) bug("%s:%d check_params received a pointer to NULL id\n", __FILE__, __LINE__);
+
+	
+	if (ty_query(p->type) == TYARRAY || ty_query(p->type) == TYFUNC) {
+		error("Parameter type must be a simple type");
+	}
+	
+	PARAM_LIST c = p->next;
+	while (c) {
+		if (!strcmp(st_get_id_str(p->id), st_get_id_str(c->id))) {
+			// ids are identical, return null instead of duplicate
+			error("Duplicate parameter name: \"%s\"", st_get_id_str(p->id));
+		}
+		if (ty_query(c->type) == TYARRAY || ty_query(c->type) == TYFUNC) {
+			error("Parameter type must be a simple type");
+		}
+		c = c->next;
+	}
+	
+	return p;
+}
+
 
 
 

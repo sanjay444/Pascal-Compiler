@@ -190,10 +190,48 @@ PARAM_LIST build_param_list(VAR_ID_LIST id_list,TYPE type,BOOLEAN value)
 
 }
 
+PARAM_LIST check_param(PARAM_LIST p) 
+{
+	
+	if (!p) bug("%s:%d check_params received a NULL pointer\n", __FILE__, __LINE__);
+	if (!p->id) bug("%s:%d check_params received a pointer to NULL id\n", __FILE__, __LINE__);
+
+	
+	if (ty_query(p->type) == TYARRAY || ty_query(p->type) == TYFUNC) {
+		error("Parameter type must be a simple type");
+	}
+	
+	PARAM_LIST c = p->next;
+	while (c) {
+		if (!strcmp(st_get_id_str(p->id), st_get_id_str(c->id))) {
+			// ids are identical, return null instead of duplicate
+			error("Duplicate parameter name: \"%s\"", st_get_id_str(p->id));
+		}
+		if (ty_query(c->type) == TYARRAY || ty_query(c->type) == TYFUNC) {
+			error("Parameter type must be a simple type");
+		}
+		c = c->next;
+	}
+	
+	return p;
+}
+
+PARAM_LIST concatenate_param_list (PARAM_LIST list1,PARAM_LIST list2)
+{
+	if (!list1 && !list2) return NULL;	
+	if (!list1) return list2;		
+	if (!list2) return list1;		
 
 
-
-
+	PARAM_LIST new_list;
+	new_list=list1;
+	while (new_list->next!=NULL)
+	{
+		new_list=new_list->next;
+	}
+	new_list->next=list2;
+	return list1;
+}
 
 
 
