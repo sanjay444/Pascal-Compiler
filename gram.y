@@ -82,13 +82,12 @@ void yyerror(const char *);
 %type <y_type> typename type_denoter type_denoter_1 new_ordinal_type
 %type <y_type> subrange_type new_procedural_type ordinal_index_type
 %type <y_type> array_type unpacked_structured_type new_structured_type
-%type <y_type> functiontype new_pointer_type
+%type <y_type> functiontype new_pointer_type pointer_domain_type
 %type <y_paramlist> optional_procedural_type_formal_parameter_list
 %type <y_paramlist> procedural_type_formal_parameter_list
 %type <y_paramlist> procedural_type_formal_parameter
 %type <y_indexlist> array_index_list
 %type <y_stid> identifier new_identifier
-%type <y_param> pointer_domain_type
 %type <y_varidlist> id_list optional_par_id_list
 
 /* Reserved words. */
@@ -450,7 +449,7 @@ procedural_type_formal_parameter_list:
   | procedural_type_formal_parameter_list semi procedural_type_formal_parameter  { $$ = concatenate_param_list ($1, $3); }
   ;
 
-procedural_type_formal_parameter:\
+procedural_type_formal_parameter:
     id_list  {$$=build_param_list($1,ty_build_basic(TYERROR),FALSE);}
   | id_list ':' typename  { $$ = build_param_list($1, $3, FALSE); }
   | LEX_VAR id_list ':' typename  { $$ = build_param_list($2, $4, TRUE); }
