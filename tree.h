@@ -145,7 +145,7 @@ EXPR make_realconst_expr(double val);
 EXPR make_strconst_expr(char * str);
 EXPR make_id_expr(ST_ID id);
 EXPR make_null_expr(EXPR_NULLOP op);
-EXPR make_un_expr(EXPR_UNOP opo, EXPR sub);
+EXPR make_un_expr(EXPR_UNOP op, EXPR sub);
 EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right);
 EXPR make_fcall_expr(EXPR func, EXPR_LIST args);
 EXPR make_error_expr();
