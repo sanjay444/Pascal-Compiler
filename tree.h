@@ -135,6 +135,7 @@ void resolve_all_ptr();
 /***** PROJECT 2  *******/
 EXPR_LIST expr_list_reverse(EXPR_LIST list);
 EXPR_LIST expr_prepend(EXPR expr, EXPR_LIST list);
+TYPE check_subrange(EXPR lo, EXPR hi);
 int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset);
 void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir);
 int enter_function(ST_ID id, TYPE type, char *global_func_name);
@@ -144,7 +145,7 @@ EXPR make_realconst_expr(double val);
 EXPR make_strconst_expr(char * str);
 EXPR make_id_expr(ST_ID id);
 EXPR make_null_expr(EXPR_NULLOP op);
-EXPR make_un_expr(EXPR_UNOP opo, EXPR sub);
+EXPR make_un_expr(EXPR_UNOP op, EXPR sub);
 EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right);
 EXPR make_fcall_expr(EXPR func, EXPR_LIST args);
 EXPR make_error_expr();
