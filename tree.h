@@ -112,7 +112,7 @@ void create_gdecl(VAR_ID_LIST list,TYPE type);
 
 TYPE check_typename( ST_ID id );
 
-TYPE check_subrange( long a, long b);
+//TYPE check_subrange( long a, long b);
 
 TYPE check_array(TYPE array, INDEX_LIST i);
 
@@ -154,3 +154,4 @@ void expr_free(EXPR expr);
 char * get_global_func_name(ST_ID id);
 
 #endif
+

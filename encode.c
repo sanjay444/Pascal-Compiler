@@ -19,7 +19,7 @@ void simple_allocate_space (char *id, TYPE type)
 
 void array_allocate_space (char *id, TYPE array, INDEX_LIST *i)
 {
-	TYPE simple_type = ty_query_array (array, *i);
+	TYPE simple_type = ty_query_array (array, i);
 
 	int size = simple_size (simple_type);
 	int asize = size * sizeof(i);

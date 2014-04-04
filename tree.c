@@ -1,6 +1,7 @@
 #include <stdlib.h>
-#include "tree.h"
 #include <stdio.h>
+#include <assert.h>
+#include "tree.h"
 
 /* This function creates a new type name data record and install it in the symbol table.
  * It take two parameters; the name of the type name as a char array, and a type object.
@@ -89,7 +90,7 @@ TYPE check_typename(ST_ID id) {
  * It take two parameters; both an int representing the first and second indexes. 
  * As an output it returns a type object; if the error is issued then an error type is returned else the original type is returned.
  */
-TYPE check_subrange(long a, long b) {
+/*TYPE check_subrange(long a, long b) {
 	if (a < b) {
 		return ty_build_subrange(ty_build_basic(TYSIGNEDLONGINT), a, b);
 	}
@@ -98,7 +99,7 @@ TYPE check_subrange(long a, long b) {
 	error("Illegal index type (ignored)");
 	//return NULL;
 	return ty_build_basic(TYERROR);
-}
+} */
 
 /* This function checks a function type to see if it's a simple type.
  * It take one parameter; a type object.If the type was a function then an error message is issued.
@@ -317,3 +318,361 @@ void resolve_all_ptr()
 	}
 
 }
+
+/* This function will prepend an EXPR onto the front of an EXPR_LIST
+ * Returns the altered EXPR_LIST list
+ */
+EXPR_LIST expr_prepend(EXPR expr, EXPR_LIST list) {
+   EXPR_LIST alt_list;
+   alt_list = (EXPR_LIST)malloc(sizeof(EXPR_LIST_NODE));
+
+   alt_list->expr = expr;
+   alt_list->next = NULL;
+
+   //check if list is empty
+   if (list != NULL) {
+      //pushing the list to the end of alt_list
+      alt_list->next = list;
+   }
+
+   return alt_list;
+}
+
+/* This function will reverse a list of EXPRs
+ * Returns the reversed list 
+ */
+EXPR_LIST expr_list_reverse(EXPR_LIST list) {
+   EXPR_LIST tmp;
+   EXPR_LIST prev = NULL;
+
+   while (list != NULL) {
+      tmp = list->next;
+      list->next = prev;
+      prev = list;
+      list = tmp;
+   }
+ 
+   return prev;
+}
+
+/* Function checks the TYPE, returns error if not a data type
+ * If global decl: 
+ *                install each id in the symbol tables as GDECL
+ * If local decl:
+ *               compute size/alignment of given TYPE
+ *               decrease cur_offset to alignment
+ *               for each id in list:
+ *                   decrease cur_offset by size of TYPE
+ *                   install id as LDECL
+ * Returns altered value of cur_offset
+ */
+int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
+   int block;
+   ST_DR data_block;
+   ST_DR data_rec;
+
+   //check type, it must by data type
+   TYPETAG tag = ty_query(type);
+   if (tag == TYFUNC) {
+      error("Variable(s) must be of data type");
+   }
+
+   data_block = st_lookup(ids->id, &block);
+
+   if (block > 1) { //global variables
+      create_gdecl(ids, type);
+   }
+   else { //local variables
+      //compute size and alignment requirement
+      //decrease cur_offset to the alignment
+      while (ids != NULL) {
+         data_rec = stdr_alloc();
+         data_rec->tag = LDECL;
+         data_rec->u.decl.type = type;
+         data_rec->u.decl.sc = NO_SC;
+         data_rec->u.decl.is_ref = FALSE;
+         data_rec->u.decl.v.offset = cur_offset;
+
+         if (!st_install(ids->id, data_rec)) {
+            error("Duplicate variable declaration: \"%s\"", st_get_id_str(ids->id));
+            free(data_rec);
+         }
+         
+         ids = ids->next;
+      }
+   }
+   return cur_offset;
+}
+
+/* Function checks that both lo and hi are INTCONSTS of the same type,
+ * also checks that the second index is larger than the first 
+ * Returns new subrange type
+ *
+ * Previous check_subrange function took in long parameters
+ */
+TYPE check_subrange(EXPR lo, EXPR hi) {
+   long low, high;
+
+   // check if INTCONSTS
+   if (lo->tag != INTCONST || hi->tag != INTCONST) {
+      error("Subrange indexs are not Integers");
+      return ty_build_basic(TYERROR);
+   }
+
+   // create new subrange type if lo < hi
+   low = lo->u.intval;
+   high = hi->u.intval;
+
+   if (low < high) {
+      return ty_build_subrange(ty_build_basic(TYSIGNEDLONGINT), low, high);
+   }
+   
+   error("Empty subrange in array index");
+   error("Illegal index type (ignored)");
+
+   return ty_build_basic(TYERROR);
+}
+
+
+/* Function to build function declartion type and install into table */
+void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
+   PARAM_LIST params;
+   BOOLEAN check;
+   TYPE returntype;
+
+   // creates data record
+   ST_DR data_rec;
+   data_rec = stdr_alloc();
+   data_rec->tag = GDECL;
+
+   if (dir == DIR_EXTERNAL) {
+      data_rec->u.decl.sc = EXTERN_SC;
+      returntype = ty_query_func(type, &params, &check); //retrieve return type;
+      data_rec->u.decl.type = ty_build_func(returntype, params, FALSE); //set check args to false and return new functype
+   }
+   else if (dir == DIR_FORWARD) {
+      data_rec->u.decl.sc = NO_SC;
+      data_rec->u.decl.type = type; //type is not altered
+   }
+   else {
+      //othewise an invalid directive
+     printf("invalid DIRECTIVE");
+   }
+
+   data_rec->u.decl.is_ref = FALSE; //check this, guessing false for now
+   data_rec->u.decl.v.global_func_name = st_get_id_str(id);
+
+   //install into symbol table
+   if (!st_install(id,data_rec)) {
+      //error message if doesn't work
+      error("Duplicate forward or external function declaration");
+      free(data_rec);
+   }
+}
+
+/* Function to... */
+int enter_function(ST_ID id, TYPE type, char *global_func_name) {
+   ST_DR data_rec;
+   PARAM_LIST param1, param2;
+   BOOLEAN check1, check2;
+   TYPE type1, type2;
+   int block;	//current block
+   int init_offset;
+
+   //call st_lookup to see if id is previously installed in current block
+   data_rec = st_lookup(id, &block);
+
+   //if not previously installed then install as new FDECL
+   if (data_rec == NULL) {
+      data_rec = stdr_alloc();
+
+      data_rec->tag = FDECL;
+      data_rec->u.decl.type = type;
+      data_rec->u.decl.sc = NO_SC;
+      data_rec->u.decl.is_ref = FALSE;
+      data_rec->u.decl.v.global_func_name = global_func_name;
+
+      if (!st_install(id, data_rec)) {
+         error("couldn't install");
+         free(data_rec);
+      }
+   } 
+   else {	//else if not installed
+      //previous decl must be GDECL with same type and no_sc as storage class
+      //check tag and storage class
+      if (data_rec->tag != GDECL || data_rec->u.decl.sc != NO_SC) {
+         //error
+         error("error in enter_function(), no GDECL, no no_SC");
+         return;
+      } 
+      else { //check types were the same
+         //get return types
+	 type1 = ty_query_func(type, &param1, &check1); //prev decl
+         type2 = ty_query_func(data_rec->u.decl.type, &param2, &check2); //curr decl
+
+         //check equality
+         if (ty_test_equality(type1, type2) == TRUE) { //if same
+            //change tag from GDECL to FDECL
+            data_rec->tag = FDECL;
+            data_rec->u.decl.v.global_func_name = global_func_name;
+         }
+         else { //not equal
+            error("error in enter_function(), types not equal");
+         }
+      }
+   } //installs id as a function with give function TYPE 
+
+   //pushes id onto a global stack of function ids
+   //fi_top++; // increment stack
+   //func_id_stack[fi_top] = id; //set value
+   //this will be used to detect return assignments within body of fcn
+
+   //enter local scope of the function
+   st_enter_block(); //informs symtab new block entered, increments cur block number
+
+   //initiialize the formal parameter offset calculation
+   b_init_formal_param_offset();//emits no assembly code
+
+   //if local function
+   if (st_get_cur_block() > 1) { //globals in block 1, predefined in block 0
+      //first param is reference link (shadow parameter)
+      b_get_formal_param_offset(TYPTR); //allocates 8bytes and sets return_value_offset to allocated space
+   }
+   
+   //install each parameter (in order) as new PDECL with given TYPE
+   install_params(param1);
+
+   //get initial offset
+   init_offset = b_get_local_var_offset();
+
+   if (type1 == TYVOID) {
+      init_offset = init_offset - 8; //if nonvoid, 8 is subtracted from offset
+   }
+   
+   return init_offset;
+}
+
+/* Function to create a new INCTCONST node with given type and value
+ * Returns new node
+ */
+EXPR make_intconst_expr(long val, TYPE type) {
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = INTCONST;
+   ret->type = type;
+   ret->u.intval = val;
+   return ret;
+}
+
+/* Function to create a new REALCONST node with TYDOUBLE type and value
+ * Returns new node
+ */
+EXPR make_realconst_expr(double val) {
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = REALCONST;
+   ret->type = ty_build_basic(TYDOUBLE);
+   ret->u.realval = val;
+   return ret;
+}
+
+/* Function to create a new STRCONST node
+ * Returns new node
+ */
+EXPR make_strconst_expr(char *str) {
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = STRCONST;
+   ret->type = ty_build_ptr(NULL, ty_build_basic(TYUNSIGNEDCHAR));
+   ret->u.strval = str;
+   return ret;
+}  
+
+/* Function to create a new nULLOP node with given op and TYPE depends on op
+ * Retunrs new node
+ */
+EXPR make_null_expr(EXPR_NULLOP op) {
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = NULLOP;
+   ret->u.nullop.op = op;
+
+   if (op == NIL_OP) {
+      ret->type = ty_build_basic(TYVOID);
+   }
+   else if (op == NULL_EOF_OP || op == NULL_EOLN_OP) {
+      ret->type = ty_build_basic(TYSIGNEDCHAR);
+   }
+
+   return ret;
+}
+
+/* Function checks to see if EXPR is l-value, can be done by looking
+ * at tag and other information
+ * Returns true if it does
+ */
+BOOLEAN is_lval(EXPR expr) {
+   //fist check tag of expr
+   if (expr->tag == LVAR) { //all LVARs are l-val
+      return TRUE;
+   }
+   else if (expr->tag == GID) {
+      if (ty_query(expr->type) == TYFUNC) { //l-val only if data type
+         return FALSE;
+      }
+      else {
+         return TRUE;
+      }
+   }
+   else if (expr->tag == UNOP) {
+      if (expr->u.unop.op == INDIR_OP) { //l-val if indirection op
+         return TRUE;
+      }
+   }
+   else {
+      return FALSE;
+   }
+}
+         
+         
+
+
+/* function to install parameters, used in enter_function() 
+ * local function
+ */
+void install_params(PARAM_LIST list) {
+   long low,high;
+
+   while (list != NULL) {
+      //create symtab record
+      ST_DR data_rec;
+      data_rec = stdr_alloc();
+
+      data_rec->tag = PDECL;	//parameters are installed as PDECL tag
+      data_rec->u.decl.sc = list->sc;
+      data_rec->u.decl.is_ref = list->is_ref;
+      data_rec->u.decl.err = list->err;
+      
+      if (ty_query(list->type) == TYSUBRANGE) {
+         data_rec->u.decl.type = ty_query_subrange(list->type, &low, &high);
+      }
+      else {
+         data_rec->u.decl.type = list->type;
+      }
+
+      if (list->is_ref == TRUE) { //var parameter
+         data_rec->u.decl.v.offset = b_get_formal_param_offset(TYPTR);
+      }
+      else {
+         data_rec->u.decl.v.offset = b_get_formal_param_offset(data_rec->u.decl.type);
+      }
+
+      st_install(list->id, data_rec);
+      list = list->next;
+   }
+}
+
