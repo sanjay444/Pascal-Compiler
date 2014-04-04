@@ -72,13 +72,38 @@ void yyerror(const char *);
     INDEX_LIST   y_indexlist;
     PARAM        y_param;
     VAR_ID_LIST  y_varidlist;
+    EXPR	 y_expr;
+    EXPR_LIST	 y_exprlist;
+    EXPR_NULLOP  y_nullop;
+    EXPR_UNOP    y_unop;
+    EXPR_BINOP   y_binop;
+    EXPR_ID      y_exprid;
+    FUNC_HEAD    y_funchead;
+    DIRECTIVE    y_dir;
 }
 
 /* updated token types and non-terminal types */
+%type <y_expr> unsigned_number number constant constant_literal
+%type <y_expr> expression actual_parameter static_expression
+%type <y_expr> simple_expression term signed_primary primary factor
+%type <y_expr> signed_factor variable_or_function_access predefined_literal
+%type <y_expr> variable_or_function_access_no_as
+%type <y_expr> variable_or_function_access_no_standard_function
+%type <y_expr> variable_or_function_access_no_id rest_of_statement
+%type <y_expr> assignment_or_call_statement standard_procedure_statement
+%type <y_expr> variable_access_or_typename optional_par_actual_parameter
+%type <y_exprlist> actual_parameter_list optional_par_actual_parameter_list
+%type <y_nullop> rts_fun_optpar
+%type <y_unop> sign rts_fun_onepar rts_fun_parlist
+%type <y_binop> relational_operator multiplying_operator adding_operator
+%type <y_exprid> variable_or_function_access_maybe_assignment
+%type <y_funchead> function_heading
+%type <y_dir> directive_list directive
+%type <y_cint> variable_declaration_part variable_declaration_list
+%type <y_cint> variable_declaration simple_decl any_decl any_declaration_part
 %token <y_string> LEX_ID
 
-%type <y_string>  new_identifier_1
-%type <y_int> sign unsigned_number number constant
+%type <y_string>  new_identifier_1 string combined_string
 %type <y_type> typename type_denoter type_denoter_1 new_ordinal_type
 %type <y_type> subrange_type new_procedural_type ordinal_index_type
 %type <y_type> array_type unpacked_structured_type new_structured_type
@@ -331,7 +356,7 @@ constant_definition:
     new_identifier '=' static_expression semi  {}
   ;
 
-constant: /* number only now */
+constant:
     identifier  {}
   | sign identifier  {}
   | number  { $$ = $1; }
@@ -339,18 +364,18 @@ constant: /* number only now */
   ;
 
 number:
-    sign unsigned_number  { $$ = $1 * $2; }
+    sign unsigned_number  { $$ = make_un_expr($1, $2); }
   | unsigned_number  { $$ = $1; }
   ;
 
 unsigned_number:
-    LEX_INTCONST  { $$ = $1; }
-  | LEX_REALCONST  { $$ = (long) $1; /* cast as long */}
+    LEX_INTCONST  { /* $$ = make_intconst_expr($1, ) not sure what to pass as type */ }
+  | LEX_REALCONST  { $$ = make_realconst_expr( (double)$1); }
   ;
 
 sign:
-    '+'  { $$ = 1; }
-  | '-'  { $$ = -1; }
+    '+'  { $$ = UPLUS_OP; }
+  | '-'  { $$ = NEG_OP; }
   ;
 
 constant_literal:
@@ -586,17 +611,17 @@ function_heading:
   ;
 
 directive_list:
-    directive  {}
+    directive  { $$ = $1; }
   | directive_list semi directive  {}
   ;
 
 directive:
-    LEX_FORWARD  {}
-  | LEX_EXTERNAL  {}
+    LEX_FORWARD  { $$ = DIR_FORWARD;  } 
+  | LEX_EXTERNAL { $$ = DIR_EXTERNAL; }
   ;
 
 functiontype:
-    /* empty */ 
+    /* empty */   {} 
   | ':' typename  { $$ = check_function_type($2); }
   ;
 
@@ -1019,8 +1044,8 @@ optional_par_actual_parameter:
   ;
 
 rts_fun_optpar:
-    p_EOF  {}
-  | p_EOLN  {}
+    p_EOF  { $$ = UN_EOF_OP; }
+  | p_EOLN  { $$ = UN_EOLN_OP; }
   ;
 
 rts_fun_onepar:
@@ -1050,29 +1075,29 @@ rts_fun_onepar:
   ;
 
 rts_fun_parlist:
-    p_SUCC        /* One or two args */  {}
-  | p_PRED        /* One or two args */  {}
+    p_SUCC        /* One or two args */  { $$ = UN_SUCC_OP; }
+  | p_PRED        /* One or two args */  { $$ = UN_PRED_OP; }
   ;
 
 relational_operator:
-    LEX_NE  {}
-  | LEX_LE  {}
-  | LEX_GE  {}
-  | '='  {}
-  | '<'  {}
-  | '>'  {}
+    LEX_NE  { $$ = NE_OP;        }
+  | LEX_LE  { $$ = LE_OP;        }
+  | LEX_GE  { $$ = GE_OP;        }
+  | '='     { $$ = EQ_OP;        }
+  | '<'     { $$ = LESS_OP;      }
+  | '>'     { $$ = GREATER_OP;   }
   ;
 
 multiplying_operator:
-    LEX_DIV  {}
-  | LEX_MOD  {}
-  | '/'  {}
-  | '*'  {}
+    LEX_DIV  { $$ = DIV_OP;     }
+  | LEX_MOD  { $$ = MOD_OP;     }
+  | '/'      { $$ = REALDIV_OP; }
+  | '*'      { $$ = MUL_OP;     }
   ;
 
 adding_operator:
-    '-'  {}
-  | '+'  {}
+    '-'  { $$ = SUB_OP; }
+  | '+'  { $$ = ADD_OP; }
   ;
 
 semi:
