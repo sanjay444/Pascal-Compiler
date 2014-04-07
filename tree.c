@@ -637,8 +637,88 @@ BOOLEAN is_lval(EXPR expr) {
       return FALSE;
    }
 }
+
+EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
+   BOOLEAN check;
+   PARAM_LIST param;
+   TYPE ret_type;
+   TYPETAG expr_type;
+   EXPR_LIST aCopy = args; //copy of arg list
+   EXPR_LIST bCopy = args; //another copy
+
+   //check that func is of function type
+   if (ty_query(func->type) != TYFUNC) {
+      error("not functiontype");
+      return make_error_expr();
+   }
+
+   //check check_args flag
+   ret_type = ty_query_func(func->type, &param, &check);
+   
+   if (!check) { //likely an external function
+      //make all arguments r-values and unary-convert         
+      while (aCopy != NULL) {
+         if (is_lval(aCopy->expr)) { //create a deref node
+            make_un_expr(DEREF_OP, aCopy->expr);
+         }
+
+         //perform conversions
+         expr_type = ty_query(aCopy->expr->type);
+         if (expr_type == TYSIGNEDCHAR || expr_type == TYUNSIGNEDCHAR) {
+            EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
+            convertedNode->type = ty_build_basic(TYSIGNEDLONGINT);
+         }
+         else if (expr_type == TYFLOAT) {
+            EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
+            convertedNode->type = ty_build_basic(TYDOUBLE);
+         }
          
-         
+         aCopy = aCopy->next;
+      }
+   }
+   else { //check_args is true
+      while (bCopy != NULL && param != NULL) {
+         if (param->is_ref == TRUE) { //VAR parameter
+            //actual arg must be an l-value whose type 
+            //matches the type of the formal param
+            if(ty_test_equality(bCopy->expr->type, param->type) == FALSE) {
+               error("types not equal");
+               return make_error_expr();
+            }
+         }
+         else {
+            //make actual arg an r-value
+            if (is_lval(bCopy->expr) == TRUE) {
+               make_un_expr(DEREF_OP, bCopy->expr);
+            }
+      
+            //perfrom conversions
+            expr_type = ty_query(bCopy->expr->type);
+            if (expr_type == TYSIGNEDCHAR || expr_type == TYUNSIGNEDCHAR) {
+               EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
+               convertedNode->type = ty_build_basic(TYSIGNEDLONGINT);
+            }
+            else if (expr_type == TYFLOAT) {
+               EXPR convertedNode = make_un_expr(CONVERT_OP, bCopy->expr);
+               convertedNode->type = ty_build_basic(TYDOUBLE);
+            }
+         }
+
+         //try to convert to type of formal parameter
+      }
+   }
+   //check number formal args and param args and if differ then error
+
+   //create an fcall node
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = FCALL;
+   ret->type = ret_type;
+   ret->u.fcall.args = args;
+
+   return ret;
+}
 
 
 /* function to install parameters, used in enter_function() 

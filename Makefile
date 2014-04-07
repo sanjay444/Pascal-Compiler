@@ -77,6 +77,9 @@ scan.o : scan.l gram.o $(PPC3H)
 y.output: gram.y
 	$(YACC) -v -y gram.y
 
+testfile:
+	../proj2-test.pl --self-test ../Pascal-Compiler
+
 clean:
 	-rm -f ppc3 *.o y.tab.h y.output y.tab.c *.err *.s
 

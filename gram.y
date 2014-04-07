@@ -277,7 +277,7 @@ LEX_ID  { $$ = st_enter_id($1); }
   | p_PACK
   | p_UNPACK
 /* Standard Pascal ordinal functions */
-  | p_ORD  
+  | p_ORD 
   | p_CHR  
   | p_SUCC
   | p_PRED  
@@ -356,20 +356,20 @@ constant_definition:
     new_identifier '=' static_expression semi  {}
   ;
 
-constant:
+constant: //type is expr
     identifier  {}
-  | sign identifier  {}
+  | sign identifier  { }
   | number  { $$ = $1; }
-  | constant_literal  {}
+  | constant_literal  { $$ = $1; }
   ;
 
-number:
+number: //type is expr
     sign unsigned_number  { $$ = make_un_expr($1, $2); }
   | unsigned_number  { $$ = $1; }
   ;
 
-unsigned_number:
-    LEX_INTCONST  { /* $$ = make_intconst_expr($1, ) not sure what to pass as type */ }
+unsigned_number: //type is expr
+    LEX_INTCONST  { $$ = make_intconst_expr($1, ty_build_basic(TYSIGNEDLONGINT)); }
   | LEX_REALCONST  { $$ = make_realconst_expr( (double)$1); }
   ;
 
@@ -378,19 +378,19 @@ sign:
   | '-'  { $$ = NEG_OP; }
   ;
 
-constant_literal:
-    combined_string  {}
-  | predefined_literal  {}
+constant_literal: //type is expr
+    combined_string  { $$ = make_strconst_expr($1); }
+  | predefined_literal  { $$ = $1; }
   ;
 
-predefined_literal:
-    LEX_NIL  {}
-  | p_FALSE  {}
-  | p_TRUE  {}
+predefined_literal: //type is expr
+    LEX_NIL  { $$ = make_null_expr(NIL_OP); }
+  | p_FALSE  { $$ = make_intconst_expr(0, ty_build_basic(TYSIGNEDCHAR)); }
+  | p_TRUE  { $$ = make_intconst_expr(1, ty_build_basic(TYSIGNEDCHAR)); }
   ;
 
-combined_string:
-    string  {}
+combined_string: //type is string
+    string  { $$ = $1; }
   ;
 
 string:
@@ -805,12 +805,12 @@ goto_statement:
 
 optional_par_actual_parameter_list:
     /* empty */  {}
-  | '(' actual_parameter_list ')'  {}
+  | '(' actual_parameter_list ')'  { $$ = expr_list_reverse($2); }
   ;
 
 actual_parameter_list:
-    actual_parameter  {}
-  | actual_parameter_list ',' actual_parameter  {}
+    actual_parameter  { }
+  | actual_parameter_list ',' actual_parameter  { }
   ;
 
 actual_parameter:
@@ -941,7 +941,7 @@ boolean_expression:
     expression  {}
   ;
 
-expression:
+expression: //type is expression
     expression relational_operator simple_expression  {}
   | expression LEX_IN simple_expression  {}
   | simple_expression  {}
@@ -1049,29 +1049,29 @@ rts_fun_optpar:
   ;
 
 rts_fun_onepar:
-    p_ABS  {}
-  | p_SQR  {}
-  | p_SIN  {}
-  | p_COS  {}
-  | p_EXP  {}
-  | p_LN  {}
-  | p_SQRT  {}
-  | p_ARCTAN  {}
-  | p_ARG  {}
-  | p_TRUNC  {}
-  | p_ROUND  {}
-  | p_CARD  {}
-  | p_ORD  {}
-  | p_CHR  {}
-  | p_ODD  {}
-  | p_EMPTY  {}
-  | p_POSITION  {}
-  | p_LASTPOSITION  {}
-  | p_LENGTH  {}
-  | p_TRIM  {}
-  | p_BINDING  {}
-  | p_DATE  {}
-  | p_TIME  {}
+    p_ABS  { $$ = ABS_OP; }
+  | p_SQR  { $$ = SQR_OP; }
+  | p_SIN  { $$ = SIN_OP; }
+  | p_COS  { $$ = COS_OP; }
+  | p_EXP  { $$ = EXP_OP; }
+  | p_LN  { $$ = LN_OP; }
+  | p_SQRT  { $$ = SQRT_OP; }
+  | p_ARCTAN  { $$ = ARCTAN_OP; }
+  | p_ARG  { $$ = ARG_OP; }
+  | p_TRUNC  { $$ = TRUNC_OP; }
+  | p_ROUND  { $$ = ROUND_OP; }
+  | p_CARD  { $$ = CARD_OP; }
+  | p_ORD  { $$ = ORD_OP; }
+  | p_CHR  { $$ = CHR_OP; }
+  | p_ODD  { $$ = ODD_OP; }
+  | p_EMPTY  { $$ = EMPTY_OP; }
+  | p_POSITION  { $$ = POSITION_OP; }
+  | p_LASTPOSITION  { $$ = LASTPOSITION_OP; }
+  | p_LENGTH  { $$ = LENGTH_OP; }
+  | p_TRIM  { $$ = TRIM_OP; }
+  | p_BINDING  { $$ = BINDING_OP; }
+  | p_DATE  { $$ = DATE_OP; }
+  | p_TIME  { $$ = TIME_OP; }
   ;
 
 rts_fun_parlist:
