@@ -534,8 +534,8 @@ int enter_function(ST_ID id, TYPE type, char *global_func_name) {
    } //installs id as a function with give function TYPE 
 
    //pushes id onto a global stack of function ids
-   //fi_top++; // increment stack
-   //func_id_stack[fi_top] = id; //set value
+   fi_top++; // increment stack
+   func_id_stack[fi_top] = id; //set value
    //this will be used to detect return assignments within body of fcn
 
    //enter local scope of the function
