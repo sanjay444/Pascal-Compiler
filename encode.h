@@ -5,12 +5,16 @@
 #include "message.h"
 #include "tree.h"
 
-
+/* base offset (from %fp) fro all local vars in a function */
+extern int base_offset_stack[BS_DEPTH];
+extern int bo_top;
 
 
 /*set the size and alignment with b_global_decl for basic types*/
 
 void simple_allocate_space (char *id, TYPE type);
+
+int getSize(TYPE type);
 
 /*set the size and alignment with b_global_decl for arrays*/
 

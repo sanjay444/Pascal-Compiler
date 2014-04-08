@@ -65,6 +65,7 @@ void yyerror(const char *);
 %union {
     char        *y_string;
     long         y_int;
+    int          y_cint;
     double       y_real;
     ST_ID        y_stid;
     TYPE         y_type;
@@ -318,8 +319,8 @@ any_decl:
   ;
 
 simple_decl:
-    label_declaration_part  {/*ignore*/}
-  | constant_definition_part  {/*ignore*/}
+    label_declaration_part  {}
+  | constant_definition_part  {}
   | type_definition_part  {}
   | variable_declaration_part  {}
   ;
@@ -394,8 +395,8 @@ combined_string: //type is string
   ;
 
 string:
-    LEX_STRCONST  {}
-  | string LEX_STRCONST  {}
+    LEX_STRCONST  { $$ = $1; }
+  | string LEX_STRCONST  { $$ = $2; }
   ;
 
 type_definition_part:
@@ -596,18 +597,19 @@ variable_declaration_list:
   | variable_declaration_list variable_declaration  {}
   ;
 
-variable_declaration:
-    id_list ':' type_denoter semi  { create_gdecl($1, $3); decl($3, $1);}
+variable_declaration: //type is cint
+    id_list ':' type_denoter semi  { /*create_gdecl($1, $3); decl($3, $1); */
+                                     $$ = process_var_decl($1, $3, b_get_local_var_offset()); }
   ;
 
-function_declaration:
+function_declaration: 
     function_heading semi directive_list semi  {}
-  | function_heading semi any_declaration_part statement_part semi  {}
+  | function_heading semi any_declaration_part statement_part semi  { enter_function($1.id, $1.type, st_get_id_str($1.id)); }
   ;
 
 function_heading:
-    LEX_PROCEDURE new_identifier optional_par_formal_parameter_list  {}
-  | LEX_FUNCTION new_identifier optional_par_formal_parameter_list functiontype  {}
+    LEX_PROCEDURE new_identifier optional_par_formal_parameter_list  { $$.id = $2; $$.type = TYVOID;}
+  | LEX_FUNCTION new_identifier optional_par_formal_parameter_list functiontype  { $$.id = $2; $$.type = $4; }
   ;
 
 directive_list:
@@ -696,7 +698,7 @@ statement_sequence:
   ;
 
 statement:
-    label ':' unlabelled_statement  {}
+    label ':' unlabelled_statement  {} /* ignore */
   | unlabelled_statement  {}
   ;
 
@@ -804,29 +806,29 @@ goto_statement:
 /* function calls */
 
 optional_par_actual_parameter_list:
-    /* empty */  {}
+    /* empty */  { $$ = NULL; }
   | '(' actual_parameter_list ')'  { $$ = expr_list_reverse($2); }
   ;
 
-actual_parameter_list:
-    actual_parameter  { }
-  | actual_parameter_list ',' actual_parameter  { }
+actual_parameter_list: //type is expr_list
+    actual_parameter  { $$ = expr_prepend($1, NULL); }
+  | actual_parameter_list ',' actual_parameter  { $$ = expr_prepend($3, $1); }
   ;
 
-actual_parameter:
-    expression  {}
+actual_parameter: //type is expr
+    expression  { $$ = $1; }
   ;
 
 /* ASSIGNMENT and procedure calls */
 
-assignment_or_call_statement:
-    variable_or_function_access_maybe_assignment rest_of_statement  {}
+assignment_or_call_statement: //type is expr
+    variable_or_function_access_maybe_assignment rest_of_statement  { $$ = check_assign_or_proc_call($1.expr, $1.id, $2); }
   ;
 
 variable_or_function_access_maybe_assignment:
-    identifier  {}
-  | address_operator variable_or_function_access  {}
-  | variable_or_function_access_no_id  {}
+    identifier  { $$.expr = make_id_expr($1); $$.id = $1;}
+  | address_operator variable_or_function_access  {} /* ignore for now */
+  | variable_or_function_access_no_id  { $$.expr = $1; $$.id = NULL; }
   ;
 
 rest_of_statement:
@@ -942,40 +944,40 @@ boolean_expression:
   ;
 
 expression: //type is expression
-    expression relational_operator simple_expression  {}
+    expression relational_operator simple_expression  { $$ = make_bin_expr($2, $1, $3); }
   | expression LEX_IN simple_expression  {}
-  | simple_expression  {}
+  | simple_expression  { $$ = $1; }
   ;
 
 simple_expression:
-    term  {}
-  | simple_expression adding_operator term  {}
-  | simple_expression LEX_SYMDIFF term  {}
-  | simple_expression LEX_OR term  {}
-  | simple_expression LEX_XOR term  {}
+    term  { $$ = $1; }
+  | simple_expression adding_operator term  { $$ = make_bin_expr($2, $1, $3); }
+  | simple_expression LEX_SYMDIFF term  { $$ = make_bin_expr(SYMDIFF_OP, $1, $3); }
+  | simple_expression LEX_OR term  { $$ = make_bin_expr(OR_OP, $1, $3); }
+  | simple_expression LEX_XOR term  { $$ = make_bin_expr(XOR_OP, $1, $3); }
   ;
 
 term:
-    signed_primary  {}
-  | term multiplying_operator signed_primary  {}
-  | term LEX_AND signed_primary  {}
+    signed_primary  { $$ = $1; }
+  | term multiplying_operator signed_primary  { $$ = make_bin_expr($2, $1, $3); }
+  | term LEX_AND signed_primary  { $$ = make_bin_expr(AND_OP, $1, $3); }
   ;
 
 signed_primary:
-    primary  {}
-  | sign signed_primary  {}
+    primary  { $$ = $1; }
+  | sign signed_primary  { $$ = make_un_expr($1, $2); }
   ;
 
 primary:
-    factor  {}
+    factor  { $$ = $1; }
   | primary LEX_POW factor  {}
   | primary LEX_POWER factor  {}
   | primary LEX_IS typename  {}
   ;
 
 signed_factor:
-    factor  {}
-  | sign signed_factor  {}
+    factor  { $$ = $1; }
+  | sign signed_factor  { $$ = make_un_expr($1, $2); }
   ;
 
 factor:
@@ -1009,12 +1011,12 @@ variable_or_function_access_no_standard_function:
 variable_or_function_access_no_id:
     p_OUTPUT  {}
   | p_INPUT  {}
-  | variable_or_function_access_no_as '.' new_identifier  {}
-  | '(' expression ')'  {}
-  | variable_or_function_access pointer_char  {}
-  | variable_or_function_access '[' index_expression_list ']'  {}
-  | variable_or_function_access_no_standard_function '(' actual_parameter_list ')'  {}
-  | p_NEW '(' variable_access_or_typename ')'  {}
+  | variable_or_function_access_no_as '.' new_identifier  {} /* ignore */
+  | '(' expression ')'  { $$ = $2; }
+  | variable_or_function_access pointer_char  { $$ = make_un_expr(INDIR_OP, $1); } /* indir */
+  | variable_or_function_access '[' index_expression_list ']'  {} /* proj3? */
+  | variable_or_function_access_no_standard_function '(' actual_parameter_list ')'  {} /* ignore */
+  | p_NEW '(' variable_access_or_typename ')'  { $$ = make_un_expr(NEW_OP, $3); }
   ;
 
 set_constructor:
@@ -1044,8 +1046,8 @@ optional_par_actual_parameter:
   ;
 
 rts_fun_optpar:
-    p_EOF  { $$ = UN_EOF_OP; }
-  | p_EOLN  { $$ = UN_EOLN_OP; }
+    p_EOF  { $$ = NULL_EOF_OP; }
+  | p_EOLN  { $$ = NULL_EOLN_OP; }
   ;
 
 rts_fun_onepar:

@@ -17,6 +17,11 @@ void simple_allocate_space (char *id, TYPE type)
 	}
 }
 
+int getSize(TYPE type) {
+   int size = simple_size(type);
+   return size;
+}
+
 void array_allocate_space (char *id, TYPE array, INDEX_LIST *i)
 {
 	TYPE simple_type = ty_query_array (array, i);

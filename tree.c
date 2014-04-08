@@ -376,31 +376,42 @@ int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
    if (tag == TYFUNC) {
       error("Variable(s) must be of data type");
    }
-
-   data_block = st_lookup(ids->id, &block);
-
-   if (block > 1) { //global variables
-      create_gdecl(ids, type);
+   
+   if (st_get_cur_block() > 1) { //global variables
+      while (ids != NULL) {
+         create_gdecl(ids, type);
+      }
    }
    else { //local variables
       //compute size and alignment requirement
-      //decrease cur_offset to the alignment
-      while (ids != NULL) {
-         data_rec = stdr_alloc();
-         data_rec->tag = LDECL;
-         data_rec->u.decl.type = type;
-         data_rec->u.decl.sc = NO_SC;
-         data_rec->u.decl.is_ref = FALSE;
-         data_rec->u.decl.v.offset = cur_offset;
+      int size = getSize(type);
+      int alignment = size;
 
-         if (!st_install(ids->id, data_rec)) {
-            error("Duplicate variable declaration: \"%s\"", st_get_id_str(ids->id));
-            free(data_rec);
+      //decrease cur_offset to the alignment
+      if (tag == TYSIGNEDCHAR || tag == TYUNSIGNEDCHAR ){
+         //no alignment changes
+      }
+      else {
+         cur_offset = cur_offset - alignment;
+         while (ids != NULL) {
+            cur_offset = cur_offset - size;
+            data_rec = stdr_alloc();
+            data_rec->tag = LDECL;
+            data_rec->u.decl.type = type;
+            data_rec->u.decl.sc = NO_SC;
+            data_rec->u.decl.is_ref = FALSE;
+            data_rec->u.decl.v.offset = cur_offset;
+
+            if (!st_install(ids->id, data_rec)) {
+               error("Duplicate variable declaration: \"%s\"", st_get_id_str(ids->id));
+               free(data_rec);
+            } 
+
+            ids = ids->next;
          }
-         
-         ids = ids->next;
       }
    }
+
    return cur_offset;
 }
 
@@ -459,7 +470,7 @@ void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
      printf("invalid DIRECTIVE");
    }
 
-   data_rec->u.decl.is_ref = FALSE; //check this, guessing false for now
+   data_rec->u.decl.is_ref = FALSE;
    data_rec->u.decl.v.global_func_name = st_get_id_str(id);
 
    //install into symbol table
@@ -756,3 +767,22 @@ void install_params(PARAM_LIST list) {
    }
 }
 
+
+
+EXPR make_id_expr(ST_ID id) {
+}
+
+EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
+}
+
+EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
+}
+
+EXPR make_error_expr() {
+}
+
+EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs) {
+}
+
+void expr_free(EXPR expr) {
+}
