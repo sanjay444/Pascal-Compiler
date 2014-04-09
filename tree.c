@@ -769,20 +769,224 @@ void install_params(PARAM_LIST list) {
 
 
 
-EXPR make_id_expr(ST_ID id) {
-}
+//added by Chris 04/08/14
+EXPR make_id_expr(ST_ID id){
+	ST_DR typeSTDR;
+	STDR_TAG tag;
+	EXPR_TAG etag;
 
-EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
-}
+	 //if the id is null then bug is found
+	if (id == NULL)
+		bug("null id passed to \"st_install\"");
 
-EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
-}
+	typeSTDR=st_lookup(id, &block)
 
-EXPR make_error_expr() {
-}
+	tag=typeSTDR->tag;
 
-EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs) {
-}
+	if (tag==TYPENAME){
+		error("This is a typename");
+		return null;
+	}
+ 	 	
+	switch(tag)
+	{
+	case TYPENAME:
+		error("This is a typename");
+		return null;
+	case GDECL:
+		etag = GID;
+		break;
+	case LDECL:
+	case PDECL:
+		etag = LVAR;
+		if(id == u.lvar->is_ref)
+			u.lvar->link_count = block-id.block;
+		else
+			u.lvar->link_count = block;
 
-void expr_free(EXPR expr) {
-}
+		break;
+	case FDECL:
+		if(block<1){
+			etag = LVAR;
+			if(id == u.lvar->is_ref)
+						u.lvar->link_count = block-id.block;
+					else
+			u.lvar->link_count = block;
+		}
+		else{
+			etag = LFUN;
+			u.lfun->link_count = block;
+			u.lfun->global_name = id;
+		break;
+	Default:
+		break;
+		}
+
+	return etag->tag;
+
+}//end make_id_expr
+
+/* gram: standard_procedure_statement (9th production), signed_primary (2nd production), signed_factor (2nd production), factor (5th and 6th productions -- optional), variable_or_function_access_no_id (5th and 8th productions), standard_functions (1st, 2nd (optional), and 3rd production (if only one parameter))
+   Returns a new UNOP node based on the op and the sub(expression):
+   1. If op expects an r-value and sub is an l-value, then a DEREF node is
+      added to sub to make it an r-value (the only Pascal unary ops that
+      expect l-values instead of r-values are the New operator and the
+      Address-of operator, which is optional).
+   2. The subexpression is unary-converted (the only unary conversions that
+      require us adding an explicit node are float->double and
+      subrange->base type).  Only r-values are converted.
+   3. The rest of the behavior depends on the op (switch statement), including
+      error-checking and constant-folding.
+   NOTE: String constants of length 1 can be converted to char if necessary.
+   This happens, e.g., with the Ord function ("Ord('A')").
+   typedef enum {
+       CONVERT_OP, DEREF_OP, NEG_OP, ORD_OP, CHR_OP, UN_SUCC_OP, UN_PRED_OP,
+       NOT_OP, ABS_OP, SQR_OP, SIN_OP, COS_OP, EXP_OP, LN_OP, SQRT_OP, ARCTAN_OP,
+       ARG_OP, TRUNC_OP, ROUND_OP, CARD_OP, ODD_OP, EMPTY_OP, POSITION_OP,
+       LASTPOSITION_OP, LENGTH_OP, TRIM_OP, BINDING_OP, DATE_OP, TIME_OP,
+       UN_EOF_OP, UN_EOLN_OP, INDIR_OP, UPLUS_OP, NEW_OP, DISPOSE_OP, ADDRESS_OP,
+       SET_RETURN_OP
+} EXPR_UNOP;
+*/
+EXPR make_un_expr(EXPR_UNOP op, EXPR sub){
+
+
+	BOOLEAN lval;
+	BOOLEAN deref;
+	EXPR ret;
+	ret = (EXPR)malloc(sizeof(EXPR_NODE));
+	
+	
+	lval = is_lval(sub);
+	if(lval){
+		if(op<>ADDRESS_OP || op<>NEW_OP)
+				deref = TRUE;
+		else
+			ret->u.unop.op = op;
+			ret->u.unop.operand = sub;
+			return ret;
+		}//end if
+	if (deref){
+		ret->u.unop.op = op;
+		ret->u.unop.operand = sub;
+		return ret;
+	}
+	switch (op){
+
+		case CONVERT_OP:
+		case NEG_OP:
+		case ORD_OP:
+		case CHR_OP:
+		case UN_SUCC_OP:
+		case UN_PRED_OP:
+		case NOT_OP:
+		case ABS_OP:
+		case SQR_OP:
+		case SIN_OP:
+		case COS_OP:
+		case EXP_OP:
+		case LN_OP:
+		case SQRT_OP:
+		case ARCTAN_OP:
+		case ARG_OP:
+		case TRUNC_OP:
+		case ROUND_OP:
+		case CARD_OP:
+		case ODD_OP:
+		case EMPTY_OP:
+		case POSITION_OP:
+		case LASTPOSITION_OP:
+		case LENGTH_OP:
+		case TRIM_OP:
+		case BINDING_OP:
+		case DATE_OP:
+		case TIME_OP:
+		case UN_EOF_OP:
+		case UN_EOLN_OP:
+		case INDIR_OP:
+		case UPLUS_OP:
+		case DISPOSE_OP:
+        case SET_RETURN_OP:
+
+		
+	return ret;
+}//end make_un_expr
+
+/* gram: expression (1st production), simple_expression (2nd production; 3rd, 4th, and 5th productions are optional), term (2nd production; 3rd is optional), standard_functions (3rd production -- if 2 arguments (optional))
+   Returns a new BINOP node based on the op and the two subexpressions:
+   1. If op expects r-value(s), then DEREF nodes are added as needed (the only
+      binary op that expects an l-value is assignment, which expects an
+      l-value on the left and an r-value on the right).
+   2. Both left and right are unary-converted as above.
+   3. Both left and right are binary converted (the only binary conversion
+      requiring a convert node is long int->double).
+   4. Currently, no binary operations are allowed on string constants except
+      = and <> (EQ and NE), so if both subexpressions are string constants,
+      they are converted to chars if possible (only if they are length 1).
+      If one argument is a string constant and the other is of type char,
+      then also try to convert the string constant.
+   5. The rest of the behavior depends on the op (switch statement) and the
+      typetags of the subexpressions, including error-checking and
+      constant-folding (for example, arithmetic ops can't act on nonnumeric
+      types).
+*/
+EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right){
+	
+}//make_bin_expr
+/* gram: assignment_or_call_statement
+   If lhs is a simple identifier, then id is the corresponding ST_ID.
+   Case 1 -- rhs is non-NULL: Then this is probably an assignment statement --
+      returns a new BINOP with tag ASSIGN_OP and lhs and rhs as operands.
+      EXCEPTION: if id is the id of the current function (the one whose body
+      we are in), then this is a return value assignment; checks that the
+      function has non-void return type, then returns a new UNOP with type
+      the return type of the function, and op SET_RETURN_OP.
+   Case 2 -- rhs is NULL: Then this is not an assignment and id is ignored.
+      If lhs is either New or Dispose, then this is the entire expression
+      and so just return lhs.  Otherwise the behavior depends on the lhs tag:
+      a) If GID or LFUN, then check that lhs is a Pascal procedure
+         (else error), whence this is a procedure call without arguments;
+         return a new FCALL node.
+      b) If FCALL, then this should be a procedure call (with arguments).
+         Check that the type (the return type of the function) tag is void;
+	 else error (a Pascal function call cannot stand alone as a
+	 statement).  If ok, then return the FCALL node.
+      c) Any other tag is an error.
+*/
+EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs){
+	
+	if(rhs!=null){
+		char *a->*st_get_id_str(id);
+		if(){
+		}//end if
+		else{
+		make_bin_expr(ASSIGN_OP, lhs, rhs);
+		}//end else
+	else{
+		if(lhs.tag == New || lhs.tag == Dispose)
+			return lhs;
+		
+	
+		
+	
+}//end check_assing_or_proc_call
+
+/* Deallocates an expression tree.  Subexpressions and other subobjects
+   are deallocated recursively, postorder. */
+void expr_free(EXPR expr){
+
+		if (expr != null){
+			expr_free(expr);
+			free(expr);
+		}
+	
+}//end expr_free
+
+void expr_list_free(EXPR_LIST list){
+	
+	if (list != null){
+		expr_list_free(list);
+		free(list);
+	}
+	
+}//end expr_list_free
