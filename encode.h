@@ -30,5 +30,7 @@ int get_array_size(TYPE type, int);
 
 void enter_main_body();
 void exit_main_body();
-
+int get_local_var_offset();
+void enter_func_body();
+void exit_func_body();
 #endif

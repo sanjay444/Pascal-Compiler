@@ -614,8 +614,8 @@ variable_declaration: //type is cint
 function_declaration: 
     function_heading semi directive_list semi  { build_func_decl($1.id, $1.type, $3); }
   | function_heading semi { $<y_cint>$ = enter_function($1.id, $1.type, st_get_id_str($1.id)); }
-    any_declaration_part  { enter_func_body(st_get_id($1.id), $1.type, $<y_cint>3); }
-    statement_part semi   { exit_func_body(st_get_id($1.id), $1.type); }
+    any_declaration_part  { enter_func_body(st_get_id_str($1.id), $1.type, $<y_cint>3); }
+    statement_part semi   { exit_func_body(st_get_id_str($1.id), $1.type); }
   ;
 
 function_heading:

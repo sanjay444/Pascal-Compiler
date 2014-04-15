@@ -259,3 +259,89 @@ void enter_main_body() {
 void exit_main_body() {
    b_func_epilogue("main");
 }
+
+/************************************************************************
+ * Wrapper function for b_get_local_var_offset()                        *
+ ************************************************************************/
+int get_local_var_offset() {
+   return b_get_local_var_offset();
+}
+
+/************************************************************************
+ * Prepares for the body of a function, emits code to store formal      *
+ * parameters and allocates space for the return value and local vars   *
+ ************************************************************************/
+void enter_func_body(char *global_func_name, TYPE type, int loc_var_offset) {
+   TYPE func_type;
+   TYPE param_type;
+   PARAM_LIST params;
+   BOOLEAN check;
+   TYPETAG func_tag;
+   TYPETAG param_tag;
+
+   int block;
+   ST_DR data_rec;
+   long low,high;
+
+   //query the function to get variables
+   func_type = ty_query_func(type, &params, &check);
+   func_tag = ty_query(func_type);
+
+   //is local function? ignore for now
+
+   while (params != NULL) {
+      param_tag = ty_query(params->type);
+      data_rec = st_lookup(params->id, &block);
+
+      if (param_tag == TYSUBRANGE) { //subrange types use base type
+         param_type = ty_query_subrange(type, &low, &high);
+         b_store_formal_param(ty_query(param_type));
+      }
+      else if (data_rec->u.decl.is_ref == TRUE) { //VAR params
+         b_store_formal_param(TYPTR);
+      } else {
+         b_store_formal_param(param_tag);
+      }
+
+      params = params->next;
+   }
+
+   //pascal function (non-void types)
+   if (func_tag != TYVOID) {
+      b_alloc_return_value();
+   }
+
+   //local vars
+   b_alloc_local_vars(loc_var_offset - get_local_var_offset());
+}
+
+/************************************************************************
+ * Emits code to end a function body & exits scope of function           *
+ ************************************************************************/
+void exit_func_body(char *global_func_name, TYPE type) {
+   TYPE func_type;
+   PARAM_LIST params;
+   BOOLEAN check;
+   TYPETAG func_tag;
+   long low,high;
+
+   //query function
+   func_type = ty_query_func(type, &params, &check);
+   func_tag = ty_query(func_type);
+   
+   //pops the function id from the global stack;
+   fi_top--;
+
+   //pascal function (nonvoid types)
+   if (func_tag != TYVOID) {
+      if (func_tag == TYSUBRANGE) {
+         b_prepare_return(ty_query(ty_query_subrange(func_type, &low, &high)));
+      }
+      else {
+         b_prepare_return(func_tag);
+      }
+   }
+
+   b_func_epilogue(global_func_name);
+   st_exit_block();
+}
