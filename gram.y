@@ -619,8 +619,8 @@ function_declaration:
   ;
 
 function_heading:
-    LEX_PROCEDURE new_identifier optional_par_formal_parameter_list  { $$.id = $2; $$.type = TYVOID;}
-  | LEX_FUNCTION new_identifier optional_par_formal_parameter_list functiontype  { $$.id = $2; $$.type = $4; }
+    LEX_PROCEDURE new_identifier optional_par_formal_parameter_list  { $$.id = $2; $$.type = ty_build_func(ty_build_basic(TYVOID),NULL, FALSE);}
+  | LEX_FUNCTION new_identifier optional_par_formal_parameter_list functiontype  { $$.id = $2; $$.type = ty_build_func($4, NULL ,FALSE); }
   ;
 
 directive_list:
@@ -801,8 +801,8 @@ for_direction:
 simple_statement:
     empty_statement  {}
   | goto_statement  {}
-  | assignment_or_call_statement  {}
-  | standard_procedure_statement  {}
+  | assignment_or_call_statement  { encode_expr($1);}
+  | standard_procedure_statement  { encode_expr($1);}
   | statement_extensions  {}
   ;
 
@@ -843,8 +843,8 @@ variable_or_function_access_maybe_assignment:
   ;
 
 rest_of_statement:
-    /* Empty */  {}
-  | LEX_ASSIGN expression  {}
+    /* Empty */  { $$ = NULL; }
+  | LEX_ASSIGN expression  { $$ = $2; } 
   ;
 
 standard_procedure_statement:
