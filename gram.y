@@ -96,7 +96,7 @@ int bo_top = -1;
 %type <y_expr> expression actual_parameter static_expression
 %type <y_expr> simple_expression term signed_primary primary factor
 %type <y_expr> signed_factor variable_or_function_access predefined_literal
-%type <y_expr> variable_or_function_access_no_as
+%type <y_expr> variable_or_function_access_no_as standard_functions
 %type <y_expr> variable_or_function_access_no_standard_function
 %type <y_expr> variable_or_function_access_no_id rest_of_statement
 %type <y_expr> assignment_or_call_statement standard_procedure_statement
@@ -219,7 +219,8 @@ program_component:
   ;
 
 main_program_declaration:
-    program_heading semi import_or_any_declaration_part statement_part  {}
+    program_heading semi import_or_any_declaration_part { enter_main_body(); }
+    statement_part  { exit_main_body(); }
   ;
 
 program_heading:
@@ -316,21 +317,21 @@ any_or_import_decl:
   | any_decl  {}
   ;
 
-any_declaration_part:
-    /* empty */  {}
-  | any_declaration_part any_decl  {}
+any_declaration_part: //cint
+    /* empty */  { $$ = 0; }
+  | any_declaration_part any_decl  { $$ = $1 + $2; }
   ;
 
-any_decl:
-    simple_decl  {}
-  | function_declaration  {}
+any_decl: //cint
+    simple_decl  { $$ = $1; }
+  | function_declaration  { $$ = 0; }
   ;
 
-simple_decl:
-    label_declaration_part  {}
-  | constant_definition_part  {}
+simple_decl: //cint
+    label_declaration_part  {} //ignore
+  | constant_definition_part  {} //ignore
   | type_definition_part  {}
-  | variable_declaration_part  {}
+  | variable_declaration_part  { $$ = $1; }
   ;
 
 /* Label declaration part */
@@ -596,13 +597,13 @@ one_case_constant:
 
 /* variable declaration part */
 
-variable_declaration_part:
-    LEX_VAR variable_declaration_list  {}
+variable_declaration_part: //cint
+    LEX_VAR variable_declaration_list  { $$ = $2; }
   ;
 
-variable_declaration_list:
-    variable_declaration  {}
-  | variable_declaration_list variable_declaration  {}
+variable_declaration_list: //cint
+    variable_declaration  { $$ = $1; }
+  | variable_declaration_list variable_declaration  { $$ = $1 + $2; }
   ;
 
 variable_declaration: //type is cint
@@ -611,8 +612,10 @@ variable_declaration: //type is cint
   ;
 
 function_declaration: 
-    function_heading semi directive_list semi  {}
-  | function_heading semi any_declaration_part statement_part semi  { enter_function($1.id, $1.type, st_get_id_str($1.id)); }
+    function_heading semi directive_list semi  { build_func_decl($1.id, $1.type, $3); }
+  | function_heading semi { $<y_cint>$ = enter_function($1.id, $1.type, st_get_id_str($1.id)); }
+    any_declaration_part  { enter_func_body(st_get_id($1.id), $1.type, $<y_cint>3); }
+    statement_part semi   { exit_func_body(st_get_id($1.id), $1.type); }
   ;
 
 function_heading:
@@ -853,7 +856,7 @@ standard_procedure_statement:
   | p_READLN optional_par_actual_parameter_list  {}
   | p_PAGE optional_par_actual_parameter_list  {}
   | ucsd_STR '(' write_actual_parameter_list ')'  {}
-  | p_DISPOSE '(' actual_parameter ')'  {}
+  | p_DISPOSE '(' actual_parameter ')'  { $$ = make_un_expr(DISPOSE_OP, $3); }
   | p_DISPOSE '(' actual_parameter ',' actual_parameter_list ')'  {}
   ;
 
@@ -928,7 +931,7 @@ continue_statement:
 
 variable_access_or_typename:
     variable_or_function_access_no_id  {}
-  | LEX_ID  {}
+  | LEX_ID  { $$ = make_id_expr(st_enter_id($1)); }
   ;
 
 index_expression_list:
@@ -989,12 +992,15 @@ signed_factor:
   ;
 
 factor:
-    variable_or_function_access  {}
-  | constant_literal  {}
-  | unsigned_number  {}
+    variable_or_function_access  { if (ty_query($1->type) == TYFUNC) {
+                                      $$ = make_fcall_expr($1, NULL);
+                                   } else { $$ = $1; }
+                                 }
+  | constant_literal  { $$ = $1; }
+  | unsigned_number  { $$ = $1; }
   | set_constructor  {}
-  | LEX_NOT signed_factor  {}
-  | address_operator factor  {}
+  | LEX_NOT signed_factor  { $$ = make_un_expr(NOT_OP, $2); }
+  | address_operator factor  { $$ = make_un_expr(ADDRESS_OP, $2); }
   ;
 
 address_operator:
@@ -1002,18 +1008,18 @@ address_operator:
   ;
 
 variable_or_function_access:
-    variable_or_function_access_no_as  {}
+    variable_or_function_access_no_as  { $$ = $1; }
   | variable_or_function_access LEX_AS typename  {}
   ;
 
 variable_or_function_access_no_as:
-    variable_or_function_access_no_standard_function  {}
-  | standard_functions  {}
+    variable_or_function_access_no_standard_function  { $$ = $1; }
+  | standard_functions  { $$ = $1; }
   ;
 
 variable_or_function_access_no_standard_function:
-    identifier  {}
-  | variable_or_function_access_no_id  {}
+    identifier  { $$ = make_id_expr($1); }
+  | variable_or_function_access_no_id  { $$ = $1; }
   ;
 
 variable_or_function_access_no_id:
@@ -1043,14 +1049,14 @@ member_designator:
   ;
 
 standard_functions:
-    rts_fun_onepar '(' actual_parameter ')'  {}
-  | rts_fun_optpar optional_par_actual_parameter  {}
-  | rts_fun_parlist '(' actual_parameter_list ')'  {}
+    rts_fun_onepar '(' actual_parameter ')'  { $$ = make_un_expr($1, $3); }
+  | rts_fun_optpar optional_par_actual_parameter  { $$ = make_null_expr($1); }
+  | rts_fun_parlist '(' actual_parameter_list ')'  { $$ = make_un_expr($1, $3->expr); }
   ;
 
 optional_par_actual_parameter:
     /* empty */  {}
-  |  '(' actual_parameter ')'  {}
+  |  '(' actual_parameter ')'  { $$ = $2; }
   ;
 
 rts_fun_optpar:

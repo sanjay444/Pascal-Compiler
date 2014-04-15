@@ -770,39 +770,40 @@ void install_params(PARAM_LIST list) {
 
 
 //added by Chris 04/08/14
-EXPR make_id_expr(ST_ID id){
+EXPR make_id_expr(ST_ID id) {
 	ST_DR typeSTDR;
 	STDR_TAG tag;
 	EXPR_TAG etag;
+        int block;
 
 	 //if the id is null then bug is found
 	if (id == NULL)
 		bug("null id passed to \"st_install\"");
 
-	typeSTDR=st_lookup(id, &block)
+	typeSTDR=st_lookup(id, &block);
 
 	tag=typeSTDR->tag;
 
 	if (tag==TYPENAME){
 		error("This is a typename");
-		return null;
+		return NULL;
 	}
  	 	
 	switch(tag)
 	{
 	case TYPENAME:
 		error("This is a typename");
-		return null;
+		return NULL;
 	case GDECL:
 		etag = GID;
 		break;
 	case LDECL:
 	case PDECL:
 		etag = LVAR;
-		if(id == u.lvar->is_ref)
-			u.lvar->link_count = block-id.block;
+		if(id == typeSTDR.u.lvar->is_ref)
+			typeSTDR.u.lvar->link_count = block-id.block;
 		else
-			u.lvar->link_count = block;
+			typeSTDR.u.lvar->link_count = block;
 
 		break;
 	case FDECL:

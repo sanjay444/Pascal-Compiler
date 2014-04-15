@@ -28,5 +28,7 @@ void decl(TYPE type, VAR_ID_LIST list_id);
 
 int get_array_size(TYPE type, int);
 
+void enter_main_body();
+void exit_main_body();
 
 #endif

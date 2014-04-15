@@ -244,3 +244,18 @@ int simple_size (TYPE type)
 
 	return length;
 }
+
+/*************************************************************************
+ * Calls b_func_prologue("main") to prepare the entry point of the       *
+ * main program body                                                     *
+ *************************************************************************/
+void enter_main_body() {
+   b_func_prologue("main");
+}
+
+/*************************************************************************
+ * Calls b_func_epilogue("main") to exit main program body               *
+ *************************************************************************/
+void exit_main_body() {
+   b_func_epilogue("main");
+}
