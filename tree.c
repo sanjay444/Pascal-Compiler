@@ -319,9 +319,11 @@ void resolve_all_ptr()
 
 }
 
-/* This function will prepend an EXPR onto the front of an EXPR_LIST
- * Returns the altered EXPR_LIST list
- */
+/************************************************************************
+ * Prepend an EXPR onto the front of an EXPR_LIST                       *
+ *                                                                      *
+ * Return: altered EXPR_LIST list                                       *
+ ************************************************************************/
 EXPR_LIST expr_prepend(EXPR expr, EXPR_LIST list) {
    EXPR_LIST alt_list;
    alt_list = (EXPR_LIST)malloc(sizeof(EXPR_LIST_NODE));
@@ -338,9 +340,11 @@ EXPR_LIST expr_prepend(EXPR expr, EXPR_LIST list) {
    return alt_list;
 }
 
-/* This function will reverse a list of EXPRs
- * Returns the reversed list 
- */
+/************************************************************************
+ * Reverses a list of EXPRs                                             *
+ *                                                                      *
+ * Return: reversed EXPR_LIST                                           *
+ ************************************************************************/
 EXPR_LIST expr_list_reverse(EXPR_LIST list) {
    EXPR_LIST tmp;
    EXPR_LIST prev = NULL;
@@ -355,17 +359,12 @@ EXPR_LIST expr_list_reverse(EXPR_LIST list) {
    return prev;
 }
 
-/* Function checks the TYPE, returns error if not a data type
- * If global decl: 
- *                install each id in the symbol tables as GDECL
- * If local decl:
- *               compute size/alignment of given TYPE
- *               decrease cur_offset to alignment
- *               for each id in list:
- *                   decrease cur_offset by size of TYPE
- *                   install id as LDECL
- * Returns altered value of cur_offset
- */
+/************************************************************************
+/* Processes variable declarations and installs ids into symbol table   *
+ * as either GDECL or LDECL                                             *
+ *                                                                      *
+ * Return: altered value of cur_offset                                  *
+ ************************************************************************/
 int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
    int block;
    ST_DR data_block;
@@ -377,10 +376,9 @@ int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
       error("Variable(s) must be of data type");
    }
    
-   if (st_get_cur_block() > 1) { //global variables
-      while (ids != NULL) {
-         create_gdecl(ids, type);
-      }
+   if (st_get_cur_block() >= 1) { //global variables
+      create_gdecl(ids, type);
+      decl(type,ids);
    }
    else { //local variables
       //compute size and alignment requirement
@@ -415,12 +413,13 @@ int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
    return cur_offset;
 }
 
-/* Function checks that both lo and hi are INTCONSTS of the same type,
- * also checks that the second index is larger than the first 
- * Returns new subrange type
- *
- * Previous check_subrange function took in long parameters
- */
+/************************************************************************
+ * Checks that both lo and hi are INTCONSTS of the same type, also      *
+ * checks that the second index is larger than the first                * 
+ * Previous check_subrange function took in long parameters             *
+ *                                                                      *
+ * Return: new subrange type                                            *
+ ************************************************************************/
 TYPE check_subrange(EXPR lo, EXPR hi) {
    long low, high;
 
@@ -444,8 +443,12 @@ TYPE check_subrange(EXPR lo, EXPR hi) {
    return ty_build_basic(TYERROR);
 }
 
-
-/* Function to build function declartion type and install into table */
+/************************************************************************
+/* Builds the function declaration type and intalls into the symbol     *
+ * table.                                                               *
+ *                                                                      *
+ * Return: Nothing                                                      *
+ ************************************************************************/
 void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
    PARAM_LIST params;
    BOOLEAN check;
@@ -457,13 +460,16 @@ void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
    data_rec->tag = GDECL;
 
    if (dir == DIR_EXTERNAL) {
+      //retrieve return type
+      //set check args to false and return new functype
       data_rec->u.decl.sc = EXTERN_SC;
-      returntype = ty_query_func(type, &params, &check); //retrieve return type;
-      data_rec->u.decl.type = ty_build_func(returntype, params, FALSE); //set check args to false and return new functype
+      returntype = ty_query_func(type, &params, &check);
+      data_rec->u.decl.type = ty_build_func(returntype, params, FALSE);
    }
    else if (dir == DIR_FORWARD) {
+      //type is not altered
       data_rec->u.decl.sc = NO_SC;
-      data_rec->u.decl.type = type; //type is not altered
+      data_rec->u.decl.type = type; 
    }
    else {
       //othewise an invalid directive
@@ -481,13 +487,17 @@ void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
    }
 }
 
-/* Function to... */
+/************************************************************************
+ * Function to...                                                       *
+ *                                                                      *
+ * Return: int value for offset                                         *
+ ************************************************************************/
 int enter_function(ST_ID id, TYPE type, char *global_func_name) {
    ST_DR data_rec;
    PARAM_LIST param1, param2;
    BOOLEAN check1, check2;
    TYPE type1, type2;
-   int block;	//current block
+   int block;
    int init_offset;
 
    //call st_lookup to see if id is previously installed in current block
@@ -563,9 +573,11 @@ int enter_function(ST_ID id, TYPE type, char *global_func_name) {
    return init_offset;
 }
 
-/* Function to create a new INCTCONST node with given type and value
- * Returns new node
- */
+/************************************************************************
+ * Creates a new INCTCONST node with given type and value               *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
 EXPR make_intconst_expr(long val, TYPE type) {
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
@@ -576,9 +588,11 @@ EXPR make_intconst_expr(long val, TYPE type) {
    return ret;
 }
 
-/* Function to create a new REALCONST node with TYDOUBLE type and value
- * Returns new node
- */
+/************************************************************************
+ * Creates a new REALCONST node with TYDOUBLE type and given value      *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
 EXPR make_realconst_expr(double val) {
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
@@ -589,9 +603,11 @@ EXPR make_realconst_expr(double val) {
    return ret;
 }
 
-/* Function to create a new STRCONST node
- * Returns new node
- */
+/************************************************************************
+ * Creates a new STRCONST node                                          *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
 EXPR make_strconst_expr(char *str) {
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
@@ -602,9 +618,11 @@ EXPR make_strconst_expr(char *str) {
    return ret;
 }  
 
-/* Function to create a new nULLOP node with given op and TYPE depends on op
- * Retunrs new node
- */
+/************************************************************************
+ * Creates a new NULLOP node with given op and TYPE depends on op       *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
 EXPR make_null_expr(EXPR_NULLOP op) {
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
@@ -622,10 +640,25 @@ EXPR make_null_expr(EXPR_NULLOP op) {
    return ret;
 }
 
-/* Function checks to see if EXPR is l-value, can be done by looking
- * at tag and other information
- * Returns true if it does
- */
+/************************************************************************
+ * Creates a new ERROR node with type ty_build_basic(TYERROR).          *
+ * Returns new node						        *
+ ************************************************************************/
+EXPR make_error_expr() {
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = ERROR;
+   ret->type = ty_build_basic(TYERROR);
+   return ret;
+}
+
+/************************************************************************
+ * Function checks to see if EXPR is l-value, can be done by looking    *
+ * at tag and other information                                         *
+ *                                                                      *
+ * Return: Boolean value, TRUE if l-value                               *
+ ************************************************************************/
 BOOLEAN is_lval(EXPR expr) {
    //fist check tag of expr
    if (expr->tag == LVAR) { //all LVARs are l-val
@@ -649,13 +682,17 @@ BOOLEAN is_lval(EXPR expr) {
    }
 }
 
+/************************************************************************
+ * Creates a new EXPR node of type FCALL                                *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
 EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
    BOOLEAN check;
    PARAM_LIST param;
    TYPE ret_type;
    TYPETAG expr_type;
-   EXPR_LIST aCopy = args; //copy of arg list
-   EXPR_LIST bCopy = args; //another copy
+   EXPR_LIST aCopy = args; //copy of arg list for adding deref/convert
 
    //check that func is of function type
    if (ty_query(func->type) != TYFUNC) {
@@ -670,7 +707,8 @@ EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
       //make all arguments r-values and unary-convert         
       while (aCopy != NULL) {
          if (is_lval(aCopy->expr)) { //create a deref node
-            make_un_expr(DEREF_OP, aCopy->expr);
+            EXPR derefNode = make_un_expr(DEREF_OP, aCopy->expr);
+            aCopy->expr = derefNode; //expr now points to deref node
          }
 
          //perform conversions
@@ -678,44 +716,52 @@ EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
          if (expr_type == TYSIGNEDCHAR || expr_type == TYUNSIGNEDCHAR) {
             EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
             convertedNode->type = ty_build_basic(TYSIGNEDLONGINT);
+            aCopy->expr = convertedNode;//expr now points to convert node
          }
          else if (expr_type == TYFLOAT) {
             EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
             convertedNode->type = ty_build_basic(TYDOUBLE);
+            aCopy->expr = convertedNode;//expr now points to convert node
          }
          
          aCopy = aCopy->next;
       }
    }
    else { //check_args is true
-      while (bCopy != NULL && param != NULL) {
+      while (aCopy != NULL && param != NULL) {
          if (param->is_ref == TRUE) { //VAR parameter
             //actual arg must be an l-value whose type 
             //matches the type of the formal param
-            if(ty_test_equality(bCopy->expr->type, param->type) == FALSE) {
+            if(ty_test_equality(aCopy->expr->type, param->type) == FALSE) {
                error("types not equal");
                return make_error_expr();
             }
          }
          else {
             //make actual arg an r-value
-            if (is_lval(bCopy->expr) == TRUE) {
-               make_un_expr(DEREF_OP, bCopy->expr);
+            if (is_lval(aCopy->expr) == TRUE) {
+               EXPR derefNode = make_un_expr(DEREF_OP, aCopy->expr);
+               aCopy->expr = derefNode; //expr now points to convert node
             }
       
             //perfrom conversions
-            expr_type = ty_query(bCopy->expr->type);
+            expr_type = ty_query(aCopy->expr->type);
             if (expr_type == TYSIGNEDCHAR || expr_type == TYUNSIGNEDCHAR) {
                EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
                convertedNode->type = ty_build_basic(TYSIGNEDLONGINT);
+               aCopy->expr = convertedNode;
             }
             else if (expr_type == TYFLOAT) {
-               EXPR convertedNode = make_un_expr(CONVERT_OP, bCopy->expr);
+               EXPR convertedNode = make_un_expr(CONVERT_OP, aCopy->expr);
                convertedNode->type = ty_build_basic(TYDOUBLE);
+               aCopy->expr = convertedNode;
             }
          }
 
          //try to convert to type of formal parameter
+
+        aCopy = aCopy->next;
+        param = param->next;
       }
    }
    //check number formal args and param args and if differ then error
@@ -732,9 +778,12 @@ EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
 }
 
 
-/* function to install parameters, used in enter_function() 
- * local function
- */
+/************************************************************************
+ * Function to install parameters, used in enter_function()             *
+ * local function                                                       *
+ *                                                                      *
+ * Return: nothing                                                      *
+ ************************************************************************/
 void install_params(PARAM_LIST list) {
    long low,high;
 
@@ -767,10 +816,8 @@ void install_params(PARAM_LIST list) {
    }
 }
 
-
-
 //added by Chris 04/08/14
-EXPR make_id_expr(ST_ID id) {
+/*EXPR make_id_expr(ST_ID id) {
 	ST_DR typeSTDR;
 	STDR_TAG tag;
 	EXPR_TAG etag;
@@ -825,8 +872,65 @@ EXPR make_id_expr(ST_ID id) {
 
 	return etag->tag;
 
-}//end make_id_expr
+}//end make_id_expr*/
 
+/************************************************************************
+ * Creates a new (GID, LFUN, LVAR) type                                 *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
+EXPR make_id_expr(ST_ID id) {
+   printf("entering make_id_expr() for id \"%s\"\n", st_get_id_str(id));
+   ST_DR data_rec;
+   int block;
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+
+   //look up information for id, error if not found or TYPENAME
+   data_rec = st_lookup(id, &block);
+   if (data_rec == NULL) {
+      error("Undeclared identifier \"%s\" in expression", st_get_id_str(id));
+      return make_error_expr();
+   } 
+   
+   if (data_rec->tag == TYPENAME) {
+      error("Identifier \"%s\" installed as TYPENAME", st_get_id_str(id));
+      return make_error_expr();
+   }
+
+   //switch statement to fill rest of fields for ret
+   ret->type = data_rec->u.decl.type;
+   switch(data_rec->tag) {
+      case GDECL:
+         ret->tag = GID;
+         ret->u.gid = id;
+         break;
+      case LDECL:
+      case PDECL:
+         ret->tag = LVAR;
+         ret->u.lvar.is_ref = data_rec->u.decl.is_ref;
+         ret->u.lvar.link_count = st_get_cur_block() - block;
+         ret->u.lvar.offset = data_rec->u.decl.v.offset;
+         break;
+      case FDECL:
+         if (block <= 1) {
+            ret->tag = GID;
+            ret->u.gid = id;
+         }
+         else {
+            ret->tag = LFUN;
+            ret->u.lfun.global_name = data_rec->u.decl.v.global_func_name;
+            ret->u.lfun.link_count = st_get_cur_block() - block;
+         }
+         break;
+       
+      default:
+         break;
+   }
+   return ret;
+}
+   
 /* gram: standard_procedure_statement (9th production), signed_primary (2nd production), signed_factor (2nd production), factor (5th and 6th productions -- optional), variable_or_function_access_no_id (5th and 8th productions), standard_functions (1st, 2nd (optional), and 3rd production (if only one parameter))
    Returns a new UNOP node based on the op and the sub(expression):
    1. If op expects an r-value and sub is an l-value, then a DEREF node is
@@ -848,7 +952,7 @@ EXPR make_id_expr(ST_ID id) {
        UN_EOF_OP, UN_EOLN_OP, INDIR_OP, UPLUS_OP, NEW_OP, DISPOSE_OP, ADDRESS_OP,
        SET_RETURN_OP
 } EXPR_UNOP;
-*/
+
 EXPR make_un_expr(EXPR_UNOP op, EXPR sub){
 
 
@@ -911,8 +1015,81 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub){
 
 		
 	return ret;
-}//end make_un_expr
+}//end make_un_expr*/
 
+/************************************************************************
+ * Creates a new UNOP node, with op and sub                             *
+ * Also creates DEREF nodes and conversions if necessary                *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
+EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
+   /*new node variables & initial assignments*/
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = UNOP;
+   ret->type = sub->type;
+   ret->u.unop.op = op;
+   ret->u.unop.operand = sub;
+   /*querying variables*/
+   TYPETAG sub_tag = ty_query(sub->type);
+   ST_ID id;
+   TYPE base_type;
+   long low, high; 
+
+   //if op expects an r-value and sub is an l-value, add a DEREF node
+   if (op == ADDRESS_OP || op == NEW_OP) { //expect l-values
+      if (is_lval(sub) == FALSE) {
+         return make_error_expr();
+      }
+   }
+   else { //expect r-values
+      if (is_lval(sub) == TRUE) {
+         ret->u.unop.operand = make_un_expr(DEREF_OP,sub);
+      }
+   }
+
+   //subexpression is unary-converted
+   if (is_lval(sub) == FALSE) {
+      if (sub_tag == TYFLOAT) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, sub);
+         convertedNode->type = ty_build_basic(TYDOUBLE);
+         ret->u.unop.operand = convertedNode;
+      }
+      else if (sub_tag == TYSUBRANGE) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, sub);
+         base_type = ty_query_subrange(sub->type, &low, &high);
+         convertedNode->type = base_type;
+         ret->u.unop.operand = convertedNode;
+      }
+   }
+
+   //switch statement on op for error checking
+   switch (op) {
+      case CONVERT_OP:
+         break;
+      case DEREF_OP:
+         break;
+      case NEG_OP:
+         //must be of type TYSIGNEDLONGINT, TYFLOAT, TYDOUBLE
+         break;
+      case ORD_OP:
+         break;
+      case CHR_OP:
+         break;
+      case UN_SUCC_OP:
+         break;
+      case UN_PRED_OP:
+         break;
+      case UPLUS_OP:
+         break;
+      default:
+         break;
+   }
+ 
+   return ret;
+}
 /* gram: expression (1st production), simple_expression (2nd production; 3rd, 4th, and 5th productions are optional), term (2nd production; 3rd is optional), standard_functions (3rd production -- if 2 arguments (optional))
    Returns a new BINOP node based on the op and the two subexpressions:
    1. If op expects r-value(s), then DEREF nodes are added as needed (the only
@@ -931,9 +1108,19 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub){
       constant-folding (for example, arithmetic ops can't act on nonnumeric
       types).
 */
-EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right){
-	
-}//make_bin_expr
+
+/************************************************************************
+ * Creates a new BINOP node with op and expr left, right                *
+ * Also creates DEREF nodes and conversions if necessary                *
+ *                                                                      *
+ * Return: the new node                                                 *
+ ************************************************************************/
+EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
+   /*new node variables*/
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+}
 /* gram: assignment_or_call_statement
    If lhs is a simple identifier, then id is the corresponding ST_ID.
    Case 1 -- rhs is non-NULL: Then this is probably an assignment statement --
@@ -956,7 +1143,7 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right){
 */
 EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs){
 	
-	if(rhs!=null){
+	/*if(rhs!=null){
 		char *a->*st_get_id_str(id);
 		if(){
 		}//end if
@@ -965,7 +1152,7 @@ EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs){
 		}//end else
 	else{
 		if(lhs.tag == New || lhs.tag == Dispose)
-			return lhs;
+			return lhs;*/
 		
 	
 		
@@ -976,7 +1163,7 @@ EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs){
    are deallocated recursively, postorder. */
 void expr_free(EXPR expr){
 
-		if (expr != null){
+		if (expr != NULL){
 			expr_free(expr);
 			free(expr);
 		}
@@ -985,7 +1172,7 @@ void expr_free(EXPR expr){
 
 void expr_list_free(EXPR_LIST list){
 	
-	if (list != null){
+	if (list != NULL){
 		expr_list_free(list);
 		free(list);
 	}
