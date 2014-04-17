@@ -366,6 +366,7 @@ EXPR_LIST expr_list_reverse(EXPR_LIST list) {
  * Return: altered value of cur_offset                                  *
  ************************************************************************/
 int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
+   printf("entering process_var_decl()\n");   
    int block;
    ST_DR data_block;
    ST_DR data_rec;
@@ -409,7 +410,7 @@ int process_var_decl(VAR_ID_LIST ids, TYPE type, int cur_offset) {
          }
       }
    }
-
+   printf("exiting process_var_decl()\n");
    return cur_offset;
 }
 
@@ -450,6 +451,7 @@ TYPE check_subrange(EXPR lo, EXPR hi) {
  * Return: Nothing                                                      *
  ************************************************************************/
 void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
+   printf("entering build_func_decl()\n");
    PARAM_LIST params;
    BOOLEAN check;
    TYPE returntype;
@@ -485,6 +487,7 @@ void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
       error("Duplicate forward or external function declaration");
       free(data_rec);
    }
+   printf("exiting build_func_decl()\n");
 }
 
 /************************************************************************
@@ -493,6 +496,7 @@ void build_func_decl(ST_ID id, TYPE type, DIRECTIVE dir) {
  * Return: int value for offset                                         *
  ************************************************************************/
 int enter_function(ST_ID id, TYPE type, char *global_func_name) {
+   printf("entering enter_function()\n");
    ST_DR data_rec;
    PARAM_LIST param1, param2;
    BOOLEAN check1, check2;
@@ -570,6 +574,7 @@ int enter_function(ST_ID id, TYPE type, char *global_func_name) {
       init_offset = init_offset - 8; //if nonvoid, 8 is subtracted from offset
    }
    
+   printf("exting enter_function()\n");
    return init_offset;
 }
 
@@ -579,6 +584,7 @@ int enter_function(ST_ID id, TYPE type, char *global_func_name) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_intconst_expr(long val, TYPE type) {
+   printf("making intconst\n");
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
    assert(ret != NULL);
@@ -594,6 +600,7 @@ EXPR make_intconst_expr(long val, TYPE type) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_realconst_expr(double val) {
+   printf("making realconst\n");
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
    assert(ret != NULL);
@@ -609,6 +616,7 @@ EXPR make_realconst_expr(double val) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_strconst_expr(char *str) {
+   printf("making strconst\n");
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
    assert(ret != NULL);
@@ -624,6 +632,7 @@ EXPR make_strconst_expr(char *str) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_null_expr(EXPR_NULLOP op) {
+   printf("entering make_null_expr()\n");
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
    assert(ret != NULL);
@@ -636,7 +645,7 @@ EXPR make_null_expr(EXPR_NULLOP op) {
    else if (op == NULL_EOF_OP || op == NULL_EOLN_OP) {
       ret->type = ty_build_basic(TYSIGNEDCHAR);
    }
-
+   printf("exiting make_null_expr()\n");
    return ret;
 }
 
@@ -688,6 +697,7 @@ BOOLEAN is_lval(EXPR expr) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
+   printf("entering make_fcall_expr()\n");
    BOOLEAN check;
    PARAM_LIST param;
    TYPE ret_type;
@@ -774,6 +784,7 @@ EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
    ret->type = ret_type;
    ret->u.fcall.args = args;
 
+   printf("exiting make_fcall_expr()\n");
    return ret;
 }
 
@@ -928,6 +939,7 @@ EXPR make_id_expr(ST_ID id) {
       default:
          break;
    }
+   printf("exiting make_id_expr()\n");
    return ret;
 }
    
@@ -1024,6 +1036,7 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub){
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
+   printf("entering make_un_expr()\n");
    /*new node variables & initial assignments*/
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
@@ -1038,6 +1051,11 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
    TYPE base_type;
    long low, high; 
 
+   //there was an infinite loop when creating a DEREF node
+   if (op == DEREF_OP) {
+      return ret;
+   }
+
    //if op expects an r-value and sub is an l-value, add a DEREF node
    if (op == ADDRESS_OP || op == NEW_OP) { //expect l-values
       if (is_lval(sub) == FALSE) {
@@ -1046,6 +1064,7 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
    }
    else { //expect r-values
       if (is_lval(sub) == TRUE) {
+         printf("creating DEREF node\n");
          ret->u.unop.operand = make_un_expr(DEREF_OP,sub);
       }
    }
@@ -1053,11 +1072,13 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
    //subexpression is unary-converted
    if (is_lval(sub) == FALSE) {
       if (sub_tag == TYFLOAT) {
+         printf("creating CONVERT node\n");
          EXPR convertedNode = make_un_expr(CONVERT_OP, sub);
          convertedNode->type = ty_build_basic(TYDOUBLE);
          ret->u.unop.operand = convertedNode;
       }
       else if (sub_tag == TYSUBRANGE) {
+         printf("creating CONVERT node\n");
          EXPR convertedNode = make_un_expr(CONVERT_OP, sub);
          base_type = ty_query_subrange(sub->type, &low, &high);
          convertedNode->type = base_type;
@@ -1072,7 +1093,9 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
       case DEREF_OP:
          break;
       case NEG_OP:
-         //must be of type TYSIGNEDLONGINT, TYFLOAT, TYDOUBLE
+         //must be of type TYSIGNEDLONGINT, TYDOUBLE
+         error("Incorrect type in NEG_OP");
+         return make_error_expr();
          break;
       case ORD_OP:
          break;
@@ -1087,7 +1110,7 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
       default:
          break;
    }
- 
+   printf("exiting make_un_expr()\n");
    return ret;
 }
 /* gram: expression (1st production), simple_expression (2nd production; 3rd, 4th, and 5th productions are optional), term (2nd production; 3rd is optional), standard_functions (3rd production -- if 2 arguments (optional))
@@ -1116,10 +1139,99 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
+   printf("creating a binary expression/n");
+   TYPETAG left_type;
+   TYPETAG right_type;
+   long low, high;
+   TYPE base_type;
    /*new node variables*/
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
    assert(ret != NULL);
+
+   ret->tag = BINOP;
+   ret->u.binop.op = op;
+   ret->u.binop.left = left;//initially
+   ret->u.binop.right = right;//initially
+   ret->type = left->type; //initially
+
+   //if op expects r-values, insert DEREF nodes if
+   if (is_lval(left) == TRUE) {
+      if (op != ADDRESS_OP) {
+         EXPR derefNode = make_un_expr(DEREF_OP, left);
+         ret->u.binop.left = derefNode; //left expr now points to deref
+      }
+   }
+   
+   if (is_lval(right) == TRUE) {
+      EXPR derefNode = make_un_expr(DEREF_OP, right);
+      ret->u.binop.right = derefNode; //right expr now points to deref
+   }
+
+   //perform unary conversions on left and right
+   left_type = ty_query(left->type);
+   right_type = ty_query(right->type);
+   if (is_lval(left) == FALSE) {
+      if (left_type == TYFLOAT) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, left);
+         convertedNode->type = ty_build_basic(TYDOUBLE);
+         ret->u.binop.left = convertedNode;
+      }
+      else if (right_type == TYFLOAT) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, right);
+         convertedNode->type = ty_build_basic(TYDOUBLE);
+         ret->u.binop.right = convertedNode;
+      }
+      else if (left_type == TYSUBRANGE) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, left);
+         base_type = ty_query_subrange(left->type, &low, &high);
+         convertedNode->type = base_type;
+         ret->u.binop.left = convertedNode;
+      }
+      else if (right_type == TYSUBRANGE) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, right);
+         base_type = ty_query_subrange(right->type, &low, &high);
+         convertedNode->type = base_type;
+         ret->u.binop.right = convertedNode;
+      }
+   }
+
+   //perfrom binary conversions on left and right
+   left_type = ty_query(ret->u.binop.left->type);
+   right_type = ty_query(ret->u.binop.right->type);
+
+   if (left_type == TYSIGNEDLONGINT) {
+      EXPR convertedNode = make_un_expr(CONVERT_OP, left);
+      convertedNode->type = ty_build_basic(TYDOUBLE);
+      ret->u.binop.left = convertedNode;
+   }
+   else if (right_type == TYSIGNEDLONGINT) {
+      EXPR convertedNode = make_un_expr(CONVERT_OP, right);
+      convertedNode->type = ty_build_basic(TYDOUBLE);
+      ret->u.binop.left = convertedNode;
+   }
+
+   left_type = ty_query(ret->u.binop.left->type);
+   right_type = ty_query(ret->u.binop.right->type);
+
+   switch(op) {
+      case ADD_OP:
+      case SUB_OP:
+      case MUL_OP:
+      case DIV_OP:
+      case MOD_OP: //check the types, only numbers
+         if (right_type != TYDOUBLE || left_type != TYDOUBLE) {
+            error("Nonnumerical type argument(s) to arithmetic operation");
+            return make_error_expr();
+         }
+         else {
+            ret->type = ty_build_basic(TYDOUBLE);
+         }
+         break;
+   }
+ 
+   printf("exiting make binary express()\n");
+   return ret;
 }
 /* gram: assignment_or_call_statement
    If lhs is a simple identifier, then id is the corresponding ST_ID.
@@ -1141,8 +1253,9 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
 	 statement).  If ok, then return the FCALL node.
       c) Any other tag is an error.
 */
-EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs){
-	
+EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs) {
+   printf("entering check_assign_or_proc_call()\n");
+
 	/*if(rhs!=null){
 		char *a->*st_get_id_str(id);
 		if(){
@@ -1153,12 +1266,66 @@ EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs){
 	else{
 		if(lhs.tag == New || lhs.tag == Dispose)
 			return lhs;*/
-		
-	
-		
-	
-}//end check_assing_or_proc_call
+   
+   PARAM_LIST params;
+   BOOLEAN check;
 
+   //case1, if rhs non null, then return binop node with assign_op
+   if (rhs != NULL) {
+      //exception if id is id of current function
+      if (id == func_id_stack[fi_top]) {
+         if (ty_query(ty_query_func(lhs->type, &params, &check)) != TYVOID) {
+            EXPR ret = make_un_expr(SET_RETURN_OP, rhs);
+            ret->type = ty_query_func(lhs->type, &params, &check);
+            return ret;
+         }
+         else {
+            error("Function type is TYVOID");
+            return make_error_expr();
+         }
+      }
+      else {
+         EXPR ret = make_bin_expr(ASSIGN_OP, lhs, rhs);
+         return ret;
+      }
+   }
+   
+   //case2, rhs is NULL
+   else {
+      if (lhs->tag = UNOP) {
+         if (lhs->u.unop.op == NEW_OP || lhs->u.unop.op == DISPOSE_OP) {
+            return lhs;
+         }
+      }
+   
+      if (lhs->tag == GID || lhs->tag == LFUN) {
+         //check that lhs is a pascal procedure
+         if (ty_query(lhs->type) == TYFUNC) {
+            EXPR ret = make_fcall_expr(lhs, NULL);
+            return ret;
+         }
+         else {
+            error("Expected procedure name, saw data");
+            return make_error_expr();      
+         }
+      }
+      else if (lhs->tag == FCALL) {
+         //check the return type is void
+         if (ty_query(lhs->type) == TYVOID) {
+            return lhs;
+         }
+         else {
+            error("Procedure call expected");
+            return make_error_expr();
+         }
+      }
+      else { //any other tag is error
+         error("any other tag is error");
+         return make_error_expr();
+      }
+   }
+}   
+   	
 /* Deallocates an expression tree.  Subexpressions and other subobjects
    are deallocated recursively, postorder. */
 void expr_free(EXPR expr){
