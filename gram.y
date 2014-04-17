@@ -395,8 +395,8 @@ constant_literal: //type is expr
 
 predefined_literal: //type is expr
     LEX_NIL  { $$ = make_null_expr(NIL_OP); }
-  | p_FALSE  { $$ = make_intconst_expr(0, ty_build_basic(TYSIGNEDCHAR)); }
-  | p_TRUE  { $$ = make_intconst_expr(1, ty_build_basic(TYSIGNEDCHAR)); }
+  | p_FALSE  { $$ = make_intconst_expr(0, ty_build_basic(TYSIGNEDLONGINT)); }
+  | p_TRUE  { $$ = make_intconst_expr(1, ty_build_basic(TYSIGNEDLONGINT)); }
   ;
 
 combined_string: //type is string

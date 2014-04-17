@@ -4,6 +4,7 @@
 #include "symtab.h"
 #include "message.h"
 #include "tree.h"
+#include "backend-x86.h"
 
 /* base offset (from %fp) fro all local vars in a function */
 extern int base_offset_stack[BS_DEPTH];
@@ -33,4 +34,5 @@ void exit_main_body();
 int get_local_var_offset();
 void enter_func_body();
 void exit_func_body();
+void encode_expr(EXPR expr);
 #endif
