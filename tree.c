@@ -1156,8 +1156,8 @@ EXPR make_un_expr(EXPR_UNOP op, EXPR sub) {
  * Return: the new node                                                 *
  ************************************************************************/
 EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
-   TYPETAG left_type;
-   TYPETAG right_type;
+   TYPETAG left_type = ty_query(left->type);
+   TYPETAG right_type = ty_query(right->type);
    long low, high;
    TYPE base_type;
    /*new node variables*/
@@ -1179,6 +1179,20 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
       }
    }
    
+   if (is_lval(left) == FALSE) {
+      if (op == ASSIGN_OP) {
+         error("Assignment requires l-value on the left");
+         return make_error_expr();
+      }
+   }
+
+   if (op == ASSIGN_OP) {
+      if (right_type == TYVOID || right_type == TYFUNC || right_type == TYERROR) {
+         error("Cannot convert between nondata types");
+         return make_error_expr();
+      }
+   }
+ 
    if (is_lval(right) == TRUE) {
       EXPR derefNode = make_un_expr(DEREF_OP, right);
       ret->u.binop.right = derefNode; //right expr now points to deref
@@ -1247,6 +1261,7 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
             ret->type = ty_build_basic(TYDOUBLE);
          }
          break;
+      case LESS_OP:
       case LE_OP:
          //type check
          //convert
@@ -1306,7 +1321,7 @@ EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs) {
    //case1, if rhs non null, then return binop node with assign_op
    if (rhs != NULL) {
       //exception if id is id of current function
-      if (id == func_id_stack[fi_top]) {
+      if (id == func_id_stack[fi_top] && fi_top >= 0) {
          if (ty_query(ty_query_func(lhs->type, &params, &check)) != TYVOID) {
             //return type is nonvoid
             EXPR ret = make_un_expr(SET_RETURN_OP, rhs);
@@ -1354,8 +1369,8 @@ EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs) {
             return make_error_expr();
          }
       }
-      else if (lhs->tag != 0) { //any other tag is error
-         error("any other tag is error");
+      else { //any other tag is error
+         error("Procedure call expected");
          return make_error_expr();
       }
    }
