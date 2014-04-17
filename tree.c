@@ -1160,6 +1160,11 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
    TYPETAG right_type = ty_query(right->type);
    long low, high;
    TYPE base_type;
+
+   if (left->tag == ERROR || right->tag == ERROR) {
+      return make_error_expr();
+   }
+
    /*new node variables*/
    EXPR ret;
    ret = (EXPR)malloc(sizeof(EXPR_NODE));
@@ -1171,6 +1176,37 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
    ret->u.binop.right = right;//initially
    ret->type = left->type; //initially
 
+   if (op == ASSIGN_OP) {
+      if (is_lval(left) == FALSE) {
+         error("Assignment requires l-value on the left");          
+         return make_error_expr();
+      }
+      if (right_type == TYVOID || right_type == TYFUNC || right_type == TYERROR) {
+         error("Cannot convert between nondata types");
+         return make_error_expr();
+      }
+      /*else if (left_type == TYDOUBLE || left_type == TYUNSIGNEDLONGINT || left_type == TYSIGNEDLONGINT || left_type == TYFLOAT) {
+         if (right_type !=  TYUNSIGNEDLONGINT && right_type != TYFLOAT && right_type != TYSIGNEDLONGINT && right_type != TYDOUBLE) {
+            error("Illegal conversion");
+            return make_error_expr();
+         }
+      }
+      else if (left_type == TYUNSIGNEDCHAR || left_type == TYSIGNEDCHAR) {
+         if (right->tag == STRCONST) {
+            ret->u.binop.right = make_intconst_expr(right->u.strval[0], ty_build_basic(TYSIGNEDLONGINT));
+         }
+         else {
+            error("Illegal conversion");
+            return make_error_expr();
+         }
+      }  
+      else if (right_type != left_type) {
+         error("Illegal conversion");
+         return make_error_expr();
+      }*/
+   }
+
+
    //if op expects r-values, insert DEREF nodes if
    if (is_lval(left) == TRUE) {
       if (op != ASSIGN_OP) {
@@ -1178,21 +1214,7 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
          ret->u.binop.left = derefNode; //left expr now points to deref
       }
    }
-   
-   if (is_lval(left) == FALSE) {
-      if (op == ASSIGN_OP) {
-         error("Assignment requires l-value on the left");
-         return make_error_expr();
-      }
-   }
 
-   if (op == ASSIGN_OP) {
-      if (right_type == TYVOID || right_type == TYFUNC || right_type == TYERROR) {
-         error("Cannot convert between nondata types");
-         return make_error_expr();
-      }
-   }
- 
    if (is_lval(right) == TRUE) {
       EXPR derefNode = make_un_expr(DEREF_OP, right);
       ret->u.binop.right = derefNode; //right expr now points to deref
@@ -1262,6 +1284,10 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
          }
          break;
       case LESS_OP:
+      case EQ_OP:
+      case NE_OP:
+      case GE_OP:
+      case GREATER_OP: 
       case LE_OP:
          //type check
          //convert
@@ -1276,6 +1302,10 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
             ret->u.binop.left = convertedNode;
          } 
          ret->type = ty_build_basic(TYSIGNEDLONGINT);       
+         break;
+      case ASSIGN_OP:
+         //check for illegal conversions
+
          break;
       default:
          break;

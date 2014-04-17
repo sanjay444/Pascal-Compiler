@@ -23,7 +23,7 @@ int main()
 	yydebug = 1;		/* DEBUG */
 #endif
 	status = yyparse();
-	st_dump();
+	//st_dump();
 	return status;
 }
 
