@@ -1185,6 +1185,14 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
          error("Cannot convert between nondata types");
          return make_error_expr();
       }
+      else if ((left_type == TYUNSIGNEDLONGINT || left_type == TYSIGNEDLONGINT) && (right_type == TYFLOAT || right_type == TYDOUBLE || right_type == TYUNSIGNEDCHAR)) {
+         error("Illegal conversion");
+         return make_error_expr();
+      }
+      else if (left_type == TYSIGNEDCHAR && (right_type == TYFLOAT || right_type == TYDOUBLE || right_type == TYSIGNEDLONGINT)) {
+         error("Illegal conversion");
+         return make_error_expr();
+      }
       /*else if (left_type == TYDOUBLE || left_type == TYUNSIGNEDLONGINT || left_type == TYSIGNEDLONGINT || left_type == TYFLOAT) {
          if (right_type !=  TYUNSIGNEDLONGINT && right_type != TYFLOAT && right_type != TYSIGNEDLONGINT && right_type != TYDOUBLE) {
             error("Illegal conversion");
@@ -1224,12 +1232,12 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
    left_type = ty_query(left->type);
    right_type = ty_query(right->type);
    if (is_lval(left) == FALSE) {
-      if (left_type == TYFLOAT) {
+      if (left_type == TYFLOAT && right_type == TYDOUBLE) {
          EXPR convertedNode = make_un_expr(CONVERT_OP, left);
          convertedNode->type = ty_build_basic(TYDOUBLE);
          ret->u.binop.left = convertedNode;
       }
-      else if (right_type == TYFLOAT) {
+      else if (right_type == TYFLOAT && left_type == TYDOUBLE) {
          EXPR convertedNode = make_un_expr(CONVERT_OP, right);
          convertedNode->type = ty_build_basic(TYDOUBLE);
          ret->u.binop.right = convertedNode;
@@ -1270,10 +1278,11 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
       case ADD_OP:
       case SUB_OP:
       case MUL_OP:
-      case DIV_OP:
+      case REALDIV_OP:
       case MOD_OP: //check the types, only numbers
          if ((right_type != TYDOUBLE && right_type != TYSIGNEDLONGINT) || (left_type != TYDOUBLE && left_type != TYSIGNEDLONGINT)) {
             error("Nonnumerical type argument(s) to arithmetic operation");
+            printf("error here\n");
             return make_error_expr();
          }
          else if (right_type == TYSIGNEDLONGINT && left_type == TYSIGNEDLONGINT) {
@@ -1282,6 +1291,9 @@ EXPR make_bin_expr(EXPR_BINOP op, EXPR left, EXPR right) {
          else {
             ret->type = ty_build_basic(TYDOUBLE);
          }
+         break;
+      case DIV_OP:
+         ret->type = ty_build_basic(TYSIGNEDLONGINT);
          break;
       case LESS_OP:
       case EQ_OP:
