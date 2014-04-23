@@ -15,7 +15,7 @@ extern int bo_top;
 /* Possible expression types (tags) */
 typedef enum {
     INTCONST, REALCONST, STRCONST, GID, LVAR, LFUN, NULLOP, UNOP, BINOP,
-    FCALL, ERROR
+    FCALL, ERROR, ARRAY_ACCESS
 } EXPR_TAG;
 
 /* Possible nullary operators (tags) */
@@ -62,6 +62,20 @@ typedef struct exprlistnode {
     struct exprlistnode * next;
 } EXPR_LIST_NODE, * EXPR_LIST;
 
+/* Stores the type and the low/high vlues used in a case constant */
+typedef struct val_node {
+   long lo, hi;
+   TYPETAG type;
+   struct val_node *next;
+} VAL_LIST_REC, *VAL_LIST;
+
+/* Record for holding attributes of a case statement on the stack */
+typedef struct {
+   TYPETAG type;
+   char *label;
+   VAL_LIST values;
+} CASE_RECORD;
+
 /* The syntax tree node for an expression
    (includes the type of the expression)
 */
@@ -93,10 +107,10 @@ typedef struct exprnode {
 	    EXPR_BINOP op;
 	    struct exprnode * left, * right;
 	} binop;
-	struct {            /* For procedure and function calls */
-	    struct exprnode * function;
-	    EXPR_LIST args;
-	} fcall;
+	struct {     /* For procedure/function calls, array accesses  */
+	    struct exprnode * function_or_array;
+	    EXPR_LIST args_or_indices;
+	} fcall_or_array_access;
     } u;
 } EXPR_NODE, *EXPR;
 
@@ -162,5 +176,13 @@ BOOLEAN is_lval(EXPR expr);
 void expr_free(EXPR expr);
 char * get_global_func_name(ST_ID id);
 
+/******* PROJECT 3 *********/
+unsigned long get_value_range(TYPE type, long *low);
+EXPR make_array_access_expr(EXPR array, EXPR_LIST indices);
+VAL_LIST new_case_value(TYPETAG type, long lo, long hi);
+BOOLEAN check_case_values(TYPETAG type, VAL_LIST vals, VAL_LIST prev_vals);
+void case_value_list_free(VAL_LIST vals);
+BOOLEAN get_case_value(EXPR expr, long *val, TYPETAG *type);
+BOOLEAN check_for_preamble(EXPR var, EXPR init, EXPR limit);
 #endif
 
