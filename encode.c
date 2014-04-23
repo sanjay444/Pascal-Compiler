@@ -26,6 +26,11 @@ int getSize(TYPE type) {
    return size;
 }
 
+int get_formal_param_offset(TYPETAG tag)
+{
+  return b_get_formal_param_offset(tag);
+}
+
 void array_allocate_space (char *id, TYPE array, INDEX_LIST *i)
 {
 	TYPE simple_type = ty_query_array (array, i);

@@ -4,6 +4,14 @@
 #include "symtab.h" 
 #include "message.h" 
 
+
+extern ST_ID func_id_stack[BS_DEPTH];
+extern int fi_top;
+
+extern int base_offset_stack[BS_DEPTH];
+extern int bo_top;
+
+
 /* Possible expression types (tags) */
 typedef enum {
     INTCONST, REALCONST, STRCONST, GID, LVAR, LFUN, NULLOP, UNOP, BINOP,

@@ -607,8 +607,19 @@ variable_declaration_list: //cint
   ;
 
 variable_declaration: //type is cint
-    id_list ':' type_denoter semi  { /*create_gdecl($1, $3); decl($3, $1); */
-                                     $$ = process_var_decl($1, $3, b_get_local_var_offset()); }
+   /* id_list ':' type_denoter semi  { /*create_gdecl($1, $3); decl($3, $1); */
+                                 //    $$ = process_var_decl($1, $3, b_get_local_var_offset()); }
+
+ id_list ':' type_denoter semi  {
+      if (st_get_cur_block() <= 1) {
+	create_gdecl($1,$3);
+	$$ = base_offset_stack[bo_top];
+      } else {
+	$$ = process_var_decl($1, $3, base_offset_stack[bo_top]);
+      }
+      resolve_all_ptr();
+    }
+  ;
   ;
 
 function_declaration: 
