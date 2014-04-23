@@ -1105,8 +1105,8 @@ EXPR make_fcall_expr(EXPR func, EXPR_LIST args) {
    assert(ret != NULL);
    ret->tag = FCALL;
    ret->type = ret_type;
-   ret->u.fcall.args = args;
-   ret->u.fcall.function = func;
+   ret->u.fcall_or_array_access.args_or_indices = args;
+   ret->u.fcall_or_array_access.function_or_array = func;
 
    return ret;
 }

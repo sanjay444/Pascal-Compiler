@@ -407,7 +407,7 @@ void encode_expr(EXPR expr)
     case BINOP:	       encode_binop(expr->u.binop.op, expr);
    		       break;
 
-    case FCALL:	       encode_fcall(expr->u.fcall.function, expr->u.fcall.args);
+    case FCALL:	       encode_fcall(expr->u.fcall_or_array_access.function_or_array, expr->u.fcall_or_array_access.args_or_indices);
       		       break;
 
   }

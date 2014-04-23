@@ -89,11 +89,14 @@ int bo_top = -1;
     EXPR_ID      y_exprid;
     FUNC_HEAD    y_funchead;
     DIRECTIVE    y_dir;
+    VAL_LIST     y_valuelist;
+    CASE_RECORD  y_caserec;
 }
 
 /* updated token types and non-terminal types */
 %type <y_expr> unsigned_number number constant constant_literal
 %type <y_expr> expression actual_parameter static_expression
+%type <y_expr> boolean_expression index_expression_item
 %type <y_expr> simple_expression term signed_primary primary factor
 %type <y_expr> signed_factor variable_or_function_access predefined_literal
 %type <y_expr> variable_or_function_access_no_as standard_functions
@@ -101,22 +104,34 @@ int bo_top = -1;
 %type <y_expr> variable_or_function_access_no_id rest_of_statement
 %type <y_expr> assignment_or_call_statement standard_procedure_statement
 %type <y_expr> variable_access_or_typename optional_par_actual_parameter
+
 %type <y_exprlist> actual_parameter_list optional_par_actual_parameter_list
+%type <y_exprlist> index_expression_list
+
 %type <y_nullop> rts_fun_optpar
 %type <y_unop> sign rts_fun_onepar rts_fun_parlist
 %type <y_binop> relational_operator multiplying_operator adding_operator
+
 %type <y_exprid> variable_or_function_access_maybe_assignment
 %type <y_funchead> function_heading
 %type <y_dir> directive_list directive
+%type <y_caserec> case_element_list case_element
+%type <y_valuelist> case_constant_list one_case_constant
+
 %type <y_cint> variable_declaration_part variable_declaration_list
 %type <y_cint> variable_declaration simple_decl any_decl any_declaration_part
-%token <y_string> LEX_ID
+%type <y_cint> repetitive_statement for_direction
 
+%token <y_string> LEX_ID
 %type <y_string>  new_identifier_1 string combined_string
+%type <y_string> simple_if if_statement case_statement conditional_statement
+
 %type <y_type> typename type_denoter type_denoter_1 new_ordinal_type
 %type <y_type> subrange_type new_procedural_type ordinal_index_type
 %type <y_type> array_type unpacked_structured_type new_structured_type
 %type <y_type> functiontype new_pointer_type pointer_domain_type
+%type <y_type> parameter_form
+
 %type <y_paramlist> optional_procedural_type_formal_parameter_list
 %type <y_paramlist> procedural_type_formal_parameter_list
 %type <y_paramlist> procedural_type_formal_parameter
