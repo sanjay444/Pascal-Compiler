@@ -1786,3 +1786,97 @@ void expr_list_free(EXPR_LIST list){
 	}
 	
 }//end expr_list_free
+
+unsigned long get_value_range(TYPE type, long *low) {
+}
+
+/************************************************************************
+ * Creates a new ARRAY_ACCESS expr with the given array and indices     *     
+ * Function will also:                                                  *
+ *     check that the array is of array type (else returns an error)    *
+ *     gets the r-val of each index expression and unary converts       *
+ *     checks that the type of each index expr matches the "formal"     *
+ *        index type                                                    *
+ *     checks that the number of index exprs matches that of the array  *
+ *                                                                      *
+ * Returns: the new node                                                *
+ ************************************************************************/
+EXPR make_array_access_expr(EXPR array, EXPR_LIST indices) {
+   //checks to make sure array type
+   if (ty_query(array->type) != TYARRAY) {
+      error("Nonarray in array access expression");
+      return make_error_expr();
+   }
+
+   //variables for querying
+   TYPE array_type;
+   INDEX_LIST i;
+
+   array_type = ty_query_array(array->type, &i);
+
+   while (indices != NULL && i != NULL) {
+      //gets the r value, deref if l-val
+      if (is_lval(indices->expr) == TRUE) {
+         indices->expr = make_un_expr(DEREF_OP, indices->expr);
+      }
+      //unary converts
+      if (ty_query(indices->expr->type) == TYSIGNEDCHAR || ty_query(indices->expr->type) == TYUNSIGNEDCHAR) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, indices->expr);
+         convertedNode->type = ty_build_basic(TYSIGNEDLONGINT);
+         indices->expr = convertedNode;
+      }
+      else if (ty_query(indices->expr->type) == TYFLOAT) {
+         EXPR convertedNode = make_un_expr(CONVERT_OP, indices->expr);
+         convertedNode->type = ty_build_basic(TYDOUBLE);
+         indices->expr = convertedNode;
+      }
+      
+      //checks type with "formal" type
+      if (ty_query(indices->expr->type) != ty_query(i->type)) {
+         error("Incompatible index type in array access");
+         return make_error_expr();
+      }
+
+      i = i->next;
+      indices = indices->next;
+   }
+  
+   //checks that both indices are same lenght
+   if ((indices == NULL && i != NULL) || (indices != NULL && i == NULL)) {
+      error("indices not equal");
+      return make_error_expr();
+   }
+
+   //finally creates array_access node
+   EXPR ret;
+   ret = (EXPR)malloc(sizeof(EXPR_NODE));
+   assert(ret != NULL);
+   ret->tag = ARRAY_ACCESS;
+   ret->type = array_type;
+   ret->u.fcall_or_array_access.args_or_indices = indices;
+   ret->u.fcall_or_array_access.function_or_array = array;
+   
+}
+
+/************************************************************************
+ * Returns a new VAL_LIST node with given information for a single case *
+ * constant                                                             *
+ ************************************************************************/
+VAL_LIST new_case_value(TYPETAG type, long lo, long hi) {
+   VAL_LIST ret;
+   ret = (VAL_LIST)malloc(sizeof(VAL_LIST_REC));
+   ret->lo = lo;
+   ret->hi = hi;
+   ret->type = type;
+   return ret;
+}
+
+BOOLEAN check_case_values(TYPETAG type, VAL_LIST vals, VAL_LIST prev_vals) {
+   
+}
+void case_value_list_free(VAL_LIST vals) {
+}
+BOOLEAN get_case_value(EXPR expr, long *val, TYPETAG *type) {
+}
+BOOLEAN check_for_preamble(EXPR var, EXPR init, EXPR limit) {
+}

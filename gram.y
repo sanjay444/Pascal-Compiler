@@ -961,23 +961,23 @@ variable_access_or_typename:
   ;
 
 index_expression_list:
-    index_expression_item  {}
-  | index_expression_list ',' index_expression_item  {}
+    index_expression_item  { $$ = expr_prepend($1, NULL); }
+  | index_expression_list ',' index_expression_item  { $$ = expr_prepend($3, $1); }
   ;
 
-index_expression_item:
-    expression  {}
-  | expression LEX_RANGE expression  {}
+index_expression_item: //expr type
+    expression  { $$ = $1; }
+  | expression LEX_RANGE expression  { $$ = $1; } //default for now
   ;
 
 /* expressions */
 
 static_expression:
-    expression  {}
+    expression  { $$ = $1; }
   ;
 
 boolean_expression:
-    expression  {}
+    expression  { $$ = $1; }
   ;
 
 expression: //type is expression
@@ -1054,7 +1054,7 @@ variable_or_function_access_no_id:
   | variable_or_function_access_no_as '.' new_identifier  {} /* ignore */
   | '(' expression ')'  { $$ = $2; }
   | variable_or_function_access pointer_char  { $$ = make_un_expr(INDIR_OP, $1); } /* indir */
-  | variable_or_function_access '[' index_expression_list ']'  {} /* proj3? */
+  | variable_or_function_access '[' index_expression_list ']'  { make_array_access_expr($1, $3); }
   | variable_or_function_access_no_standard_function '(' actual_parameter_list ')'  {} /* ignore */
   | p_NEW '(' variable_access_or_typename ')'  { $$ = make_un_expr(NEW_OP, $3); }
   ;
