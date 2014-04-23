@@ -1768,7 +1768,7 @@ EXPR check_assign_or_proc_call(EXPR lhs, ST_ID id, EXPR rhs) {
 }  
    	
 /* Deallocates an expression tree.  Subexpressions and other subobjects
-   are deallocated recursively, postorder. */
+   are deallocated recursively, postorder. 
 void expr_free(EXPR expr){
 
 		if (expr != NULL){
@@ -1776,16 +1776,62 @@ void expr_free(EXPR expr){
 			free(expr);
 		}
 	
-}//end expr_free
+}//end expr_free*/
 
-void expr_list_free(EXPR_LIST list){
+/*void expr_list_free(EXPR_LIST list){
 	
 	if (list != NULL){
 		expr_list_free(list);
 		free(list);
 	}
 	
-}//end expr_list_free
+}//end expr_list_free */
+
+/************************************************************************
+ * Deallocates an expression tree                                       *
+ * Subexpressions/subobjects are deallocated recursively, postorder     *
+ ************************************************************************/
+void expr_free(EXPR expr) {
+   if (expr->tag == UNOP) {
+      if (expr->u.unop.operand != NULL) {
+         expr_free(expr->u.unop.operand);
+      }
+      free(expr);
+   }
+   else if (expr->tag == BINOP) {
+      if (expr->u.binop.left != NULL) {
+         expr_free(expr->u.binop.left);
+      }
+      if (expr->u.binop.right != NULL) {
+         expr_free(expr->u.binop.right);
+      }
+      free(expr);
+   }
+   else if (expr->tag == FCALL) {
+      if (expr->u.fcall_or_array_access.function_or_array != NULL) {
+         expr_free(expr->u.fcall_or_array_access.function_or_array);
+      }
+      if (expr->u.fcall_or_array_access.args_or_indices != NULL) {
+         expr_list_free(expr->u.fcall_or_array_access.args_or_indices);
+      }
+      free(expr);
+   }
+   else {
+      free(expr);
+   }
+}    
+
+/************************************************************************
+ * Deallocates a list of expressions                                    *
+ ************************************************************************/
+void expr_list_free (EXPR_LIST list) {
+   if (list->next != NULL) {
+      expr_free(list->expr);
+      expr_list_free(list->next);
+   }
+   expr_free(list->expr);
+   free(list);
+}
 
 unsigned long get_value_range(TYPE type, long *low) {
 }
@@ -1871,10 +1917,28 @@ VAL_LIST new_case_value(TYPETAG type, long lo, long hi) {
    return ret;
 }
 
+/************************************************************************
+ * Function appends the case constant onto the list of previous vals    *
+ *                                                                      *
+ * For each case constant on the vals list:                             *
+ *    checks that its type matches that of the case expr                *
+ *    checks that the low value is <= high value (warning if not        *
+ *    checks for any overlap between cur val and previous (error if so) *
+ *                                                                      *
+ * Returns true iff no errors                                           *
+ ************************************************************************/
 BOOLEAN check_case_values(TYPETAG type, VAL_LIST vals, VAL_LIST prev_vals) {
    
 }
+
+/************************************************************************
+ * De-allocates a list of case constants                                *
+ ************************************************************************/
 void case_value_list_free(VAL_LIST vals) {
+   if (vals->next != NULL) {
+      case_value_list_free(vals->next);
+   }
+   free(vals);
 }
 BOOLEAN get_case_value(EXPR expr, long *val, TYPETAG *type) {
 }
