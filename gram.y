@@ -61,6 +61,10 @@ int fi_top = -1;
 int base_offset_stack[BS_DEPTH];
 int bo_top = -1;
 
+/* case record stack */
+int case_record_stack[BS_DEPTH];
+int case_top = -1;
+
 /* Like YYERROR but do call yyerror */
 #define YYERROR1 { yyerror ("syntax error"); YYERROR; }
 %}
@@ -601,12 +605,19 @@ variant:
   ;
 
 case_constant_list:
-    one_case_constant  {}
+    one_case_constant {$$ = $1;} 
   | case_constant_list ',' one_case_constant  {}
   ;
 
 one_case_constant:
-    static_expression  {}
+    static_expression  { TYPETAG type; long val;
+                         if (get_case_value($1, &val, &type) == TRUE) {  
+                            $$ = new_case_value(type, val, val);
+                         }
+                         else {
+                            $$ = NULL;
+                         }
+                        }
   | static_expression LEX_RANGE static_expression  {}
   ;
 
@@ -793,7 +804,7 @@ case_element_list:
   ;
 
 case_element:
-    case_constant_list ':' statement  {}
+    case_constant_list  {}
   ;
 
 case_default:

@@ -1928,7 +1928,22 @@ VAL_LIST new_case_value(TYPETAG type, long lo, long hi) {
  * Returns true iff no errors                                           *
  ************************************************************************/
 BOOLEAN check_case_values(TYPETAG type, VAL_LIST vals, VAL_LIST prev_vals) {
-   
+   while (vals != NULL) {
+      //check type
+      if (vals->type != type) {
+         error("Case constant type does not match type of case expression");
+         return FALSE;
+      }
+      //check subrange values
+      if (vals->type == TYSUBRANGE) {
+         if (vals->lo > vals->hi) {
+            warning("Low value of subrange is greater than high value");
+            //return FALSE //only true if no errors, this is warning
+         }
+      }
+      //check for overlap
+   }
+   return TRUE;   
 }
 
 /************************************************************************
@@ -1940,7 +1955,69 @@ void case_value_list_free(VAL_LIST vals) {
    }
    free(vals);
 }
+
+/************************************************************************
+ * Sets the output parameters to the value and type of the expression   *
+ * expr (after converting a STRCONST if possible/necessary) must be     *
+ * INTCONST or else error                                               *
+ *                                                                      *
+ * Returns true iff no errors                                           *
+ ************************************************************************/
 BOOLEAN get_case_value(EXPR expr, long *val, TYPETAG *type) {
+   //check type
+   if (expr->tag == INTCONST) {
+      *type = ty_query(expr->type);
+      *val = expr->u.intval;
+      return TRUE;
+   }
+   else if (expr->tag == STRCONST) {
+      //try and convert
+      if (strlen(expr->u.strval) == 1) { //convert
+         *type = TYSIGNEDCHAR;
+         *val = expr->u.strval[0];
+         expr = make_intconst_expr(expr->u.strval[0], ty_build_basic(TYSIGNEDLONGINT));
+         return TRUE;
+      }
+      else { //error
+         error("STRCONST not length 1");
+         return FALSE;
+      }
+   }
+   else { //error
+      error("Case constant not of INTCONST type");
+   }
 }
+
+/************************************************************************
+ * Expressions passed in are for the loop control variable, initial     *
+ * value, and the limit value.                                          *
+ * Checks that the var is an l-value of ordinal type and that type      *
+ * matches those of the init and limit (substitute base types for       *
+ * subranges.                                                           *
+ *                                                                      *
+ * Returns tree iff all checks are ok                                   *
+ ************************************************************************/
 BOOLEAN check_for_preamble(EXPR var, EXPR init, EXPR limit) {
+   TYPETAG var_type = ty_query(var->type);
+   //check lvalue
+   if (is_lval(var) == FALSE) {
+      error("Loop control variable not an l-value");
+      return FALSE;
+   }
+   //check if ordinal type
+   if (var_type != TYSIGNEDCHAR && var_type != TYUNSIGNEDCHAR && var_type != TYSIGNEDLONGINT) {
+      error("Loop control variable is not an ordinal type");
+      return FALSE;
+   }
+   //see if type matches, ignoring subranges for now
+   if (!ty_test_equality(var->type, init->type)) {
+      error("Types in loop do not match");
+      return FALSE;
+   }
+   else if (!ty_test_equality(var->type, limit->type)) {
+      error("Types in loop do not match");
+      return FALSE;
+   }
+
+   return TRUE;
 }
