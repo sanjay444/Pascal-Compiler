@@ -637,7 +637,7 @@ variable_declaration: //type is cint
                                  //    $$ = process_var_decl($1, $3, b_get_local_var_offset()); }
 
  id_list ':' type_denoter semi  {
-      if (st_get_cur_block() <= 1) {
+      if (st_get_cur_block() < 1) {
 	create_gdecl($1,$3);
 	$$ = base_offset_stack[bo_top];
       } else {
@@ -776,17 +776,29 @@ structured_variable:
   ;
 
 conditional_statement:
-    if_statement  {}
+    if_statement  { $$ = $1;}
   | case_statement  {}
   ;
 
 simple_if:
-    LEX_IF boolean_expression LEX_THEN statement  {}
+    LEX_IF boolean_expression { if(isBoolean($2) == TRUE) {
+                                   encode_expr($2);
+                                   char* end_if = new_symbol();
+                                   b_cond_jump(TYSIGNEDCHAR,B_ZERO,end_if); //jump if false
+                                   $<y_string>$ = end_if; 
+                                 }
+                              }
+    LEX_THEN statement        { $$ = $<y_string>3; }
   ;
 
 if_statement:
-    simple_if LEX_ELSE statement  {}
-  | simple_if %prec prec_if  {}
+    simple_if LEX_ELSE        { char* end_else = new_symbol();
+                                b_jump(end_else);
+                                b_label($1);
+                                $<y_string>$ = end_else;
+                              }
+    statement                 { b_label($<y_string>3);}
+  | simple_if %prec prec_if   { b_label($1);}
   ;
 
 case_statement:
@@ -823,7 +835,24 @@ repeat_statement:
   ;
 
 while_statement:
-    LEX_WHILE boolean_expression LEX_DO statement  {}
+    LEX_WHILE boolean_expression { if (isBoolean($2) == TRUE) {
+                                      char* start_while;
+                                      new_exit_label();
+                                      b_label(start_while);
+                                      encode_expr($2);
+                                      $<y_string>$ = start_while;
+                                   }
+                                 }
+                                 { if (isBoolean($2) == TRUE) {
+                                      b_cond_jump(TYSIGNEDCHAR,B_ZERO, current_exit_label());
+                                      $<y_string>$ = current_exit_label();//remove bc dont use
+                                   }
+                                 }
+    LEX_DO statement             { if (isBoolean($2) == TRUE) {
+                                      b_jump($<y_string>3); //jumps to start of loop
+                                      b_label(old_exit_label());
+                                   }
+                                 }
   ;
 
 for_statement:

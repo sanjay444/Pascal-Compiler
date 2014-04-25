@@ -3,9 +3,48 @@
 #include "encode.h"
 #include "backend-x86.h"
 
+int exit_label = -1;
+char* exit_label_stack[100];
+
+
 void encode_unop(EXPR_UNOP op, EXPR expr);
 void encode_binop(EXPR_BINOP out, EXPR expr);
 void encode_fcall(EXPR func, EXPR_LIST args);
+
+void new_exit_label() {
+   char* label = new_symbol();
+   exit_label++; //counter
+   exit_label_stack[exit_label] = label;
+}
+
+char* old_exit_label() {
+   if(exit_label < 0) {
+      bug("Exit label stack is empty");
+      return;
+   }
+   char* label = exit_label_stack[exit_label];
+   exit_label--;
+   return label;
+}
+
+char* current_exit_label() {
+   if (exit_label < 0) {
+      bug("Exit label stack is empty");
+      return;
+   }
+   char* label = exit_label_stack[exit_label];
+   return label;
+}
+
+BOOLEAN is_exit_label() {
+   if (exit_label >= 0) {
+      return TRUE;
+   }
+   else {
+      return FALSE;
+   }
+}   
+   
 
 void simple_allocate_space (char *id, TYPE type)
 {

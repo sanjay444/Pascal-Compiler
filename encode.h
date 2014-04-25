@@ -10,7 +10,6 @@
 extern int base_offset_stack[BS_DEPTH];
 extern int bo_top;
 
-
 /*set the size and alignment with b_global_decl for basic types*/
 
 void simple_allocate_space (char *id, TYPE type);
@@ -35,4 +34,9 @@ int get_local_var_offset();
 void enter_func_body();
 void exit_func_body();
 void encode_expr(EXPR expr);
+
+void new_exit_label();
+char* old_exit_label();
+char* current_exit_label();
+BOOLEAN is_exit_label();
 #endif

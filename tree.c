@@ -2021,3 +2021,13 @@ BOOLEAN check_for_preamble(EXPR var, EXPR init, EXPR limit) {
 
    return TRUE;
 }
+
+BOOLEAN isBoolean(EXPR expr) {
+   if (ty_query(expr->type) == TYSIGNEDCHAR) {
+      return TRUE;
+   }
+   else {
+      error("Non-Boolean expression");
+      return FALSE;
+   }
+}
