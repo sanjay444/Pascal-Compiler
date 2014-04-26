@@ -836,21 +836,22 @@ repeat_statement:
 
 while_statement:
     LEX_WHILE boolean_expression { if (isBoolean($2) == TRUE) {
-                                      char* start_while;
                                       new_exit_label();
+                                      char* start_while = new_symbol();
                                       b_label(start_while);
                                       encode_expr($2);
                                       $<y_string>$ = start_while;
                                    }
                                  }
                                  { if (isBoolean($2) == TRUE) {
-                                      b_cond_jump(TYSIGNEDCHAR,B_ZERO, current_exit_label());
-                                      $<y_string>$ = current_exit_label();//remove bc dont use
+                                      printf ("HI/n");
+                                      b_cond_jump(TYSIGNEDCHAR,B_ZERO,current_exit_label());
+                                      //b_label(old_exit_label());
                                    }
                                  }
     LEX_DO statement             { if (isBoolean($2) == TRUE) {
                                       b_jump($<y_string>3); //jumps to start of loop
-                                      b_label(old_exit_label());
+                                      //b_label(old_exit_label());
                                    }
                                  }
   ;
