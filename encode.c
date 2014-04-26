@@ -729,4 +729,111 @@ void encode_fcall(EXPR func, EXPR_LIST args)
 
 }
 
+void encode_dispatch(VAL_LIST vals, char * label){
+
+	VAL_LIST val;
+	TYPETAG tag;
+	char * match;
+	long lo, hi;
+
+	tag = vals.type;
+	lo = vals.lo;
+	hi = vals.hi;
+
+	match = exit_label_stack[exit_label];
+
+	//ensure the correct type
+	if(tag != TYSIGNEDINT || tag != TYUNSIGNEDINT || tag != TYSIGNEDLONGINT || tag!= TYUNSIGNEDLONGINT){
+		error("The type is incorrect for comparison");
+	else {
+		//check for single case
+		if(lo==high){
+			b_dispatch (B_EQ, tag, lo, match, true);
+		}
+		else{
+			new_exit_label();
+			char * l = exit_label_stack[exit_label];
+
+			b_dispatch (B_LT, tag, lo, l, true);
+
+			if(b_cond_jump (tag, B_NONZERO, l)
+				b_dispatch (B_LE, tag, hi, match, true);
+
+			b_label(l);
+
+		}//end else
+
+			b_label(match);
+	}
+
+
+
+
+}//end encode_dispatch
+
+
+char * encode_for_preamble(EXPR var, EXPR init, int dir, EXPR limit){
+	TYPETAG var_type = ty_query(var->type);
+	TYPETAG limit_type = ty_query(limit->type);
+	TYPETAG init_type = ty_query(init->tyep);
+	char * label;
+	/*Encodes the limit expression*/
+    if(limit_type != TYSIGNEDLONGINT){
+		b_convert (limit_type, TYSIGNEDLONGINT);
+	}//end if
+
+	/*Emits code to duplicate this value*/
+	if(limit_type != TYSIGNEDLONGINT){
+		error("conversion falied");
+		return NULL;
+	}
+	else{
+		b_duplicate (limit_type);
+	}
+	/*Encodes what amounts to an assignment of the initial value to the
+      loop control variable*/
+	if(var_type != TYSIGNEDCHAR && var_type != TYUNSIGNEDCHAR && var_type != TYSIGNEDLONGINT){
+		error("Loop control is not an ordinal");
+		return NULL
+	}
+	else
+		b_assign (limit_type);
+
+	//Emits a new "return" label
+	new_exit_label();
+	label = exit_label_stack[exit_label];
+	b_label(label);
+
+	/*Emits code to convert the initial value (on top of the control stack) to
+      TYSIGNEDLONGING (b_convert()) if it isn't already.*/
+	if(init_type != TYSIGNEDLONGINT){
+		b_convert (limit_type, TYSIGNEDLONGINT);
+	}
+
+	//Emits code to compare the duplicate limit value with the top stack value
+
+	if(dir == 0){ //less than
+		b_arith_rel_op (B_LT, limit_type);
+	}
+	else{
+		b_arith_rel_op (B_GT, limit_type);
+	}
+	//Emits a conditional jump on true
+	b_cond_jump (limit_type, B_NONZERO, label);
+
+
+
+	//sets values.
+	b_duplicate(var_type);
+
+	if(dir == 0)
+		b_inc_dec (var_type, B_PRE_INC, 0);
+	else
+		b_inc_dec (var_type, B_PRE_DEC, 0);
+
+
+	return var->strval;
+
+}//end encode_for_preamble
+
 
