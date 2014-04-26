@@ -76,6 +76,7 @@ EXPR check_assign(EXPR assign)
   if (left_tag == TYDOUBLE) {
 
     if (right_tag != TYFLOAT && right_tag != TYSIGNEDLONGINT) {
+      printf("right is not float/int and left is double\n");
       error("Illegal conversion");
       return make_error_expr();
     } 
@@ -94,6 +95,7 @@ EXPR check_assign(EXPR assign)
     
    
     if (right_tag != TYDOUBLE && right_tag != TYSIGNEDLONGINT) {
+      printf("left is float, right is double/int\n");
       error("Illegal conversion");
       return make_error_expr();
     } 
@@ -104,6 +106,7 @@ EXPR check_assign(EXPR assign)
   if (left_tag == TYUNSIGNEDCHAR && right->tag == STRCONST) {
  
     if (strlen(right->u.strval) != 1) {
+      printf("left is unsginedchar and right is strconst\n");
       error("Illegal conversion");
       return make_error_expr();
     } 
@@ -111,7 +114,14 @@ EXPR check_assign(EXPR assign)
     assign->u.binop.right = make_intconst_expr(right->u.strval[0], ty_build_basic(TYSIGNEDLONGINT));
 
     return assign;
-  } 
+  }
+
+  if (left_tag == TYARRAY || right_tag == TYARRAY) {
+     return assign;
+  }
+ 
+  printf("left_tag is %d\n",left_tag);
+  printf("right_tag is %d\n",right_tag);
   error("Illegal conversion");
   return make_error_expr();
 }
@@ -994,7 +1004,7 @@ EXPR make_error_expr() {
  ************************************************************************/
 BOOLEAN is_lval(EXPR expr) {
    //fist check tag of expr
-   if (expr->tag == LVAR) { //all LVARs are l-val
+   if (expr->tag == LVAR || expr->tag == ARRAY_ACCESS) { //all LVARs are l-val
       return TRUE;
    }
    else if (expr->tag == GID) {
@@ -1870,15 +1880,17 @@ EXPR make_array_access_expr(EXPR array, EXPR_LIST indices) {
          EXPR convertedNode = make_un_expr(CONVERT_OP, indices->expr);
          convertedNode->type = ty_build_basic(TYSIGNEDLONGINT);
          indices->expr = convertedNode;
+         array_type = indices->expr->type;
       }
       else if (ty_query(indices->expr->type) == TYFLOAT) {
          EXPR convertedNode = make_un_expr(CONVERT_OP, indices->expr);
          convertedNode->type = ty_build_basic(TYDOUBLE);
          indices->expr = convertedNode;
+         array_type = indices->expr->type;
       }
       
       //checks type with "formal" type
-      if (ty_query(indices->expr->type) != ty_query(i->type)) {
+      if (ty_query(indices->expr->type) != TYSIGNEDLONGINT) {
          error("Incompatible index type in array access");
          return make_error_expr();
       }

@@ -448,7 +448,9 @@ void encode_expr(EXPR expr)
 
     case FCALL:	       encode_fcall(expr->u.fcall_or_array_access.function_or_array, expr->u.fcall_or_array_access.args_or_indices);
       		       break;
-
+    case ARRAY_ACCESS:
+                       break;
+ 
   }
 
 }

@@ -843,16 +843,11 @@ while_statement:
                                       $<y_string>$ = start_while;
                                    }
                                  }
-                                 { if (isBoolean($2) == TRUE) {
-                                      printf ("HI/n");
+                                 {
                                       b_cond_jump(TYSIGNEDCHAR,B_ZERO,current_exit_label());
-                                      //b_label(old_exit_label());
-                                   }
                                  }
-    LEX_DO statement             { if (isBoolean($2) == TRUE) {
+    LEX_DO statement             { 
                                       b_jump($<y_string>3); //jumps to start of loop
-                                      //b_label(old_exit_label());
-                                   }
                                  }
   ;
 

@@ -175,27 +175,7 @@ main:
 	addl	$8, %esp
  #   48
  #   49
-(null):
-				# b_push_ext_addr (X)
-	subl	$8, %esp
-	movl	$X, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (0)
-	movl	$0, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( >= , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setge	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC1:
 				# b_cond_jump (signed char, ZERO,
 				#              .LC0)
 	movsbl	(%esp), %eax
@@ -244,9 +224,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC0:
+				# b_jump ( destination = .LC1 )
+	jmp	.LC1
  #   53
  #   54
 				# b_push_ext_addr (A)
@@ -330,11 +309,11 @@ main:
 	movl	%eax, (%esp)
 				# b_convert (signed long int -> signed char)
 				# b_cond_jump (signed char, ZERO,
-				#              .LC1)
+				#              .LC2)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC1
+	je	.LC2
  #   59
  #   60
 				# b_alloc_arglist (0 bytes)
@@ -348,9 +327,9 @@ main:
 	addl	$0, %esp
 	movl	(%esp), %ecx
 	movl	%ecx, %esp
-				# b_jump ( destination = .LC2 )
-	jmp	.LC2
-.LC1:
+				# b_jump ( destination = .LC3 )
+	jmp	.LC3
+.LC2:
  #   61
 				# b_push_ext_addr (B)
 	subl	$8, %esp
@@ -389,11 +368,11 @@ main:
 	movl	%eax, (%esp)
 				# b_convert (signed long int -> signed char)
 				# b_cond_jump (signed char, ZERO,
-				#              .LC3)
+				#              .LC4)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC3
+	je	.LC4
  #   62
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -424,11 +403,11 @@ main:
 	subl	$8, %esp
 	movl	%eax, (%esp)
 				# b_cond_jump (signed char, ZERO,
-				#              .LC4)
+				#              .LC5)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC4
+	je	.LC5
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
 	subl	$4, %esp
@@ -440,7 +419,7 @@ main:
 	addl	$0, %esp
 	movl	(%esp), %ecx
 	movl	%ecx, %esp
-.LC4:
+.LC5:
  #   65
  #   66
 				# b_alloc_arglist (0 bytes)
@@ -454,9 +433,9 @@ main:
 	addl	$0, %esp
 	movl	(%esp), %ecx
 	movl	%ecx, %esp
-				# b_jump ( destination = .LC5 )
-	jmp	.LC5
-.LC3:
+				# b_jump ( destination = .LC6 )
+	jmp	.LC6
+.LC4:
  #   67
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -469,7 +448,7 @@ main:
 	addl	$0, %esp
 	movl	(%esp), %ecx
 	movl	%ecx, %esp
-.LC5:
+.LC6:
  #   68
  #   69
 				# b_alloc_arglist (0 bytes)
@@ -483,7 +462,7 @@ main:
 	addl	$0, %esp
 	movl	(%esp), %ecx
 	movl	%ecx, %esp
-.LC2:
+.LC3:
  #   70
  #   71
 				# b_alloc_arglist (0 bytes)
@@ -525,33 +504,13 @@ main:
 	addl	$8, %esp
  #   75
  #   76
-(null):
-				# b_push_ext_addr (A)
-	subl	$8, %esp
-	movl	$A, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (3)
-	movl	$3, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( > , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setg	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC8:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC6)
+				#              .LC7)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC6
+	je	.LC7
  #   77
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -564,38 +523,17 @@ main:
 	addl	$0, %esp
 	movl	(%esp), %ecx
 	movl	%ecx, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC6:
+				# b_jump ( destination = .LC8 )
+	jmp	.LC8
  #   78
  #   79
-(null):
-				# b_push_ext_addr (A)
-	subl	$8, %esp
-	movl	$A, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (3)
-	movl	$3, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( < , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setl	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC10:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC7)
+				#              .LC9)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC7
+	je	.LC9
  #   80
  #   81
 				# b_alloc_arglist (0 bytes)
@@ -627,46 +565,13 @@ main:
 				# b_pop ()
 	addl	$8, %esp
  #   84
-(null):
-				# b_push_ext_addr (B)
-	subl	$8, %esp
-	movl	$B, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_ext_addr (A)
-	subl	$8, %esp
-	movl	$A, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (1)
-	movl	$1, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( + , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	addl	%ecx, %eax
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( < , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setl	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC12:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC8)
+				#              .LC11)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC8
+	je	.LC11
  #   85
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -697,33 +602,13 @@ main:
 				# b_pop ()
 	addl	$8, %esp
  #   88
-(null):
-				# b_push_ext_addr (C)
-	subl	$8, %esp
-	movl	$C, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (5)
-	movl	$5, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( < , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setl	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC14:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC9)
+				#              .LC13)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC9
+	je	.LC13
  #   89
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -766,9 +651,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC9:
+				# b_jump ( destination = .LC14 )
+	jmp	.LC14
  #   92
  #   93
  #   94
@@ -800,9 +684,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC8:
+				# b_jump ( destination = .LC12 )
+	jmp	.LC12
  #   95
  #   96
  #   97
@@ -834,9 +717,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC7:
+				# b_jump ( destination = .LC10 )
+	jmp	.LC10
  #   98
  #   99
  #  100
@@ -857,33 +739,13 @@ main:
 	addl	$8, %esp
  #  101
  #  102
-(null):
-				# b_push_ext_addr (X)
-	subl	$8, %esp
-	movl	$X, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (0)
-	movl	$0, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( >= , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setge	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC16:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC10)
+				#              .LC15)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC10
+	je	.LC15
  #  103
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -926,9 +788,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC10:
+				# b_jump ( destination = .LC16 )
+	jmp	.LC16
  #  106
  #  107
 				# b_push_ext_addr (X)
@@ -952,11 +813,11 @@ main:
 	movl	%eax, (%esp)
 				# b_convert (signed long int -> signed char)
 				# b_cond_jump (signed char, ZERO,
-				#              .LC11)
+				#              .LC17)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC11
+	je	.LC17
  #  108
 				# b_push_ext_addr (X)
 	subl	$8, %esp
@@ -973,7 +834,7 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-.LC11:
+.LC17:
  #  109
  #  110
  #  111
@@ -994,33 +855,13 @@ main:
 	addl	$8, %esp
  #  112
  #  113
-(null):
-				# b_push_ext_addr (X)
-	subl	$8, %esp
-	movl	$X, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (0)
-	movl	$0, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( >= , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setge	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC19:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC12)
+				#              .LC18)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC12
+	je	.LC18
  #  114
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -1051,33 +892,13 @@ main:
 	addl	$8, %esp
  #  116
  #  117
-(null):
-				# b_push_ext_addr (B)
-	subl	$8, %esp
-	movl	$B, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (1)
-	movl	$1, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( <= , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setle	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC21:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC13)
+				#              .LC20)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC13
+	je	.LC20
  #  118
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -1108,33 +929,13 @@ main:
 	addl	$8, %esp
  #  120
  #  121
-(null):
-				# b_push_ext_addr (C)
-	subl	$8, %esp
-	movl	$C, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (10)
-	movl	$10, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( <= , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setle	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC23:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC14)
+				#              .LC22)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC14
+	je	.LC22
  #  122
 				# b_alloc_arglist (0 bytes)
 	movl	%esp, %eax
@@ -1177,9 +978,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC14:
+				# b_jump ( destination = .LC23 )
+	jmp	.LC23
  #  125
  #  126
 				# b_push_ext_addr (B)
@@ -1210,9 +1010,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC13:
+				# b_jump ( destination = .LC21 )
+	jmp	.LC21
  #  127
  #  128
 				# b_push_ext_addr (X)
@@ -1243,9 +1042,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC12:
+				# b_jump ( destination = .LC19 )
+	jmp	.LC19
  #  129
  #  130
 				# b_push_ext_addr (A)
@@ -1297,33 +1095,13 @@ main:
 	addl	$8, %esp
  #  133
  #  134
-(null):
-				# b_push_ext_addr (B)
-	subl	$8, %esp
-	movl	$B, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (99)
-	movl	$99, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( < , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setl	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC25:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC15)
+				#              .LC24)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC15
+	je	.LC24
  #  135
 				# b_push_ext_addr (A)
 	subl	$8, %esp
@@ -1346,11 +1124,11 @@ main:
 	movl	%eax, (%esp)
 				# b_convert (signed long int -> signed char)
 				# b_cond_jump (signed char, ZERO,
-				#              .LC16)
+				#              .LC26)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC16
+	je	.LC26
  #  136
 				# b_push_ext_addr (B)
 	subl	$8, %esp
@@ -1411,9 +1189,9 @@ main:
 				# b_pop ()
 	addl	$8, %esp
  #  139
-				# b_jump ( destination = .LC17 )
-	jmp	.LC17
-.LC16:
+				# b_jump ( destination = .LC27 )
+	jmp	.LC27
+.LC26:
 				# b_push_ext_addr (A)
 	subl	$8, %esp
 	movl	$A, (%esp)
@@ -1435,11 +1213,11 @@ main:
 	movl	%eax, (%esp)
 				# b_convert (signed long int -> signed char)
 				# b_cond_jump (signed char, ZERO,
-				#              .LC18)
+				#              .LC28)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC18
+	je	.LC28
  #  140
 				# b_push_ext_addr (B)
 	subl	$8, %esp
@@ -1500,9 +1278,9 @@ main:
 				# b_pop ()
 	addl	$8, %esp
  #  143
-				# b_jump ( destination = .LC19 )
-	jmp	.LC19
-.LC18:
+				# b_jump ( destination = .LC29 )
+	jmp	.LC29
+.LC28:
  #  144
 				# b_push_ext_addr (B)
 	subl	$8, %esp
@@ -1562,8 +1340,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-.LC19:
-.LC17:
+.LC29:
+.LC27:
  #  147
  #  148
 				# b_alloc_arglist (0 bytes)
@@ -1607,9 +1385,8 @@ main:
 	movl	%edx, (%esp)
 				# b_pop ()
 	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC15:
+				# b_jump ( destination = .LC25 )
+	jmp	.LC25
  #  151
  #  152
 				# b_alloc_arglist (0 bytes)
@@ -1660,38 +1437,17 @@ main:
 				# b_pop ()
 	addl	$8, %esp
  #  158
-(null):
-				# b_push_ext_addr (I)
-	subl	$8, %esp
-	movl	$I, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (9)
-	movl	$9, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( != , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	cmpl	%ecx, %eax
-	setne	%al
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> signed char)
+.LC31:
 				# b_cond_jump (signed char, ZERO,
-				#              .LC20)
+				#              .LC30)
 	movsbl	(%esp), %eax
 	addl	$8, %esp
 	testl	%eax, %eax
-	je	.LC20
+	je	.LC30
  #  159
- #  160
-				# b_push_ext_addr (Y)
+				# b_push_ext_addr (Ca)
 	subl	$8, %esp
-	movl	$Y, (%esp)
+	movl	$Ca, (%esp)
 				# b_push_ext_addr (Y)
 	subl	$8, %esp
 	movl	$Y, (%esp)
@@ -1699,105 +1455,7 @@ main:
 	movl	(%esp), %eax
 	movzbl	(%eax), %edx
 	movb	%dl, (%esp)
-				# b_convert (unsigned char -> signed long int)
+				# b_convert (unsigned char -> array)
 	movzbl	(%esp), %eax
 	movzbl	%al, %eax
 	movl	%eax, (%esp)
-				# b_push_const_int (1)
-	movl	$1, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( + , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	addl	%ecx, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> unsigned char)
-				# b_convert (unsigned char -> signed long int)
-	movzbl	(%esp), %eax
-	movzbl	%al, %eax
-	movl	%eax, (%esp)
-				# b_push_const_int (1)
-	movl	$1, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( + , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	addl	%ecx, %eax
-	movl	%eax, (%esp)
-				# b_convert (signed long int -> unsigned char)
-				# b_deref (unsigned char)
-	movl	(%esp), %eax
-	movzbl	(%eax), %edx
-	movb	%dl, (%esp)
-				# b_assign (unsigned char)
-	movzbl	(%esp), %edx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	movb	%dl, (%eax)
-	movb	%dl, (%esp)
-				# b_pop ()
-	addl	$8, %esp
- #  161
- #  162
-				# b_push_ext_addr (I)
-	subl	$8, %esp
-	movl	$I, (%esp)
-				# b_push_ext_addr (I)
-	subl	$8, %esp
-	movl	$I, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_push_const_int (1)
-	movl	$1, %eax
-	subl	$8, %esp
-	movl	%eax, (%esp)
-				# b_arith_rel_op ( + , signed long int)
-	movl	(%esp), %ecx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	addl	%ecx, %eax
-	movl	%eax, (%esp)
-				# b_deref (signed long int)
-	movl	(%esp), %eax
-	movl	(%eax), %edx
-	movl	%edx, (%esp)
-				# b_assign (signed long int)
-	movl	(%esp), %edx
-	addl	$8, %esp
-	movl	(%esp), %eax
-	movl	%edx, (%eax)
-	movl	%edx, (%esp)
-				# b_pop ()
-	addl	$8, %esp
-				# b_jump ( destination = (null) )
-	jmp	(null)
-.LC20:
- #  163
- #  164
-				# b_alloc_arglist (0 bytes)
-	movl	%esp, %eax
-	subl	$4, %esp
-	andl	$-16, %esp
-	movl	%eax, (%esp)
-	subl	$0, %esp
-				# b_funcall_by_name (Print_ca, void)
-	call	Print_ca
-	addl	$0, %esp
-	movl	(%esp), %ecx
-	movl	%ecx, %esp
- #  165
- #  166
-				# b_push_ext_addr (Ca)
-	subl	$8, %esp
-	movl	$Ca, (%esp)
-				# b_push_ext_addr (Ca)
-	subl	$8, %esp
-	movl	$Ca, (%esp)
-				# b_deref (array)
-	movl	(%esp), %eax
